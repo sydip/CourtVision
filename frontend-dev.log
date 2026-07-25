@@ -1,0 +1,35 @@
+
+> @hoopsiq/frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.7s
+ ○ Compiling /draft ...
+ ✓ Compiled /draft in 2.6s (733 modules)
+ GET /draft 200 in 2732ms
+ GET /draft 200 in 37ms
+ GET /draft 200 in 50ms
+ ○ Compiling /playoffs ...
+ ✓ Compiled /playoffs in 1574ms (742 modules)
+ GET /playoffs 200 in 1834ms
+ GET /draft 200 in 126ms
+ ○ Compiling /assistant ...
+ ✓ Compiled /assistant in 3.1s (1768 modules)
+ GET /assistant 200 in 3608ms
+ GET /draft 200 in 113ms
+ GET /playoffs 200 in 127ms
+ GET /assistant 200 in 85ms
+ GET /draft 200 in 142ms
+ ○ Compiling /compare ...
+ ✓ Compiled /compare in 3.2s (1805 modules)
+ GET /compare 200 in 3951ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 18.4s (1812 modules)
+ ✓ Compiled in 1606ms (1807 modules)
+ ✓ Compiled in 1246ms (1809 modules)
+ GET /playoffs 200 in 154ms
+ GET /playoffs 200 in 49ms
+[?25h

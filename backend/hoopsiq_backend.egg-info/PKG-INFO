@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: hoopsiq-backend
+Version: 0.1.0
+Summary: FastAPI backend foundation for HoopsIQ
+Requires-Python: >=3.11
+Requires-Dist: alembic>=1.13
+Requires-Dist: anthropic>=0.40
+Requires-Dist: fastapi>=0.115
+Requires-Dist: nba_api>=1.6
+Requires-Dist: pydantic>=2.7
+Requires-Dist: psycopg[binary]>=3.2
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: uvicorn[standard]>=0.30
+Provides-Extra: dev
+Requires-Dist: httpx>=0.27; extra == "dev"
+Requires-Dist: mypy>=1.10; extra == "dev"
+Requires-Dist: pytest>=8.2; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"

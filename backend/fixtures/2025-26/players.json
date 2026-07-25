@@ -1,0 +1,38 @@
+[
+  {
+    "nba_player_id": 201939,
+    "slug": "stephen-curry",
+    "full_name": "Stephen Curry",
+    "first_name": "Stephen",
+    "last_name": "Curry",
+    "team_nba_id": 1610612744,
+    "position": "PG"
+  },
+  {
+    "nba_player_id": 2544,
+    "slug": "lebron-james",
+    "full_name": "LeBron James",
+    "first_name": "LeBron",
+    "last_name": "James",
+    "team_nba_id": 1610612747,
+    "position": "F"
+  },
+  {
+    "nba_player_id": 1629029,
+    "slug": "luka-doncic",
+    "full_name": "Luka Doncic",
+    "first_name": "Luka",
+    "last_name": "Doncic",
+    "team_nba_id": 1610612742,
+    "position": "G"
+  },
+  {
+    "nba_player_id": 1630162,
+    "slug": "anthony-edwards",
+    "full_name": "Anthony Edwards",
+    "first_name": "Anthony",
+    "last_name": "Edwards",
+    "team_nba_id": 1610612750,
+    "position": "SG"
+  }
+]

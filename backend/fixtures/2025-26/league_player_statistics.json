@@ -1,0 +1,60 @@
+[
+  {
+    "nba_player_id": 201939,
+    "team_nba_id": 1610612744,
+    "season": "2025-26",
+    "games_played": 1,
+    "minutes_per_game": "33.50",
+    "points_per_game": "31.00",
+    "rebounds_per_game": "4.00",
+    "assists_per_game": "7.00",
+    "true_shooting_percentage": "0.665",
+    "usage_rate": "0.302"
+  },
+  {
+    "nba_player_id": 2544,
+    "team_nba_id": 1610612747,
+    "season": "2025-26",
+    "games_played": 1,
+    "minutes_per_game": "35.25",
+    "points_per_game": "24.00",
+    "rebounds_per_game": "8.00",
+    "assists_per_game": "9.00",
+    "true_shooting_percentage": "0.587",
+    "usage_rate": "0.274"
+  },
+  {
+    "nba_player_id": 1629029,
+    "team_nba_id": 1610612742,
+    "season": "2025-26",
+    "games_played": 1,
+    "minutes_per_game": "36.75",
+    "points_per_game": "34.00",
+    "rebounds_per_game": "10.00",
+    "assists_per_game": "11.00",
+    "true_shooting_percentage": "0.619",
+    "usage_rate": "0.361"
+  },
+  {
+    "nba_player_id": 1630162,
+    "team_nba_id": 1610612750,
+    "season": "2025-26",
+    "games_played": 1,
+    "minutes_per_game": "34.00",
+    "points_per_game": "29.00",
+    "rebounds_per_game": "6.00",
+    "assists_per_game": "5.00",
+    "true_shooting_percentage": "0.604",
+    "usage_rate": "0.319"
+  },
+  {
+    "nba_player_id": 2544,
+    "team_nba_id": 1610612747,
+    "season": "2025-26",
+    "games_played": 1,
+    "minutes_per_game": "35.25",
+    "points_per_game": "24.00",
+    "true_shooting_percentage": "1.250",
+    "usage_rate": "0.274"
+  }
+]

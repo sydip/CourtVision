@@ -1,0 +1,14 @@
+{
+  "name": "hoopsiq",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace frontend run dev",
+    "lint:frontend": "npm --workspace frontend run lint",
+    "typecheck:frontend": "npm --workspace frontend run typecheck",
+    "format:frontend": "npm --workspace frontend run prettier:check",
+    "test:frontend": "npm --workspace frontend run test"
+  }
+}

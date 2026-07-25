@@ -1,0 +1,10 @@
+node_modules
+.next
+coverage
+dist
+out
+.venv
+data/raw
+raw_data
+*.json
+

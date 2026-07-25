@@ -1,0 +1,34 @@
+[
+  {
+    "nba_team_id": 1610612744,
+    "abbreviation": "GSW",
+    "city": "San Francisco",
+    "name": "Warriors",
+    "conference": "West",
+    "division": "Pacific"
+  },
+  {
+    "nba_team_id": 1610612747,
+    "abbreviation": "LAL",
+    "city": "Los Angeles",
+    "name": "Lakers",
+    "conference": "West",
+    "division": "Pacific"
+  },
+  {
+    "nba_team_id": 1610612742,
+    "abbreviation": "DAL",
+    "city": "Dallas",
+    "name": "Mavericks",
+    "conference": "West",
+    "division": "Southwest"
+  },
+  {
+    "nba_team_id": 1610612750,
+    "abbreviation": "MIN",
+    "city": "Minneapolis",
+    "name": "Timberwolves",
+    "conference": "West",
+    "division": "Northwest"
+  }
+]

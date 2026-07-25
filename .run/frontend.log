@@ -1,0 +1,52 @@
+
+> @hoopsiq/frontend@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:3000
+  - Network:      http://127.0.0.1:3000
+
+ ✓ Starting...
+ ✓ Ready in 3s
+ ○ Compiling / ...
+ ✓ Compiled / in 6.4s (456 modules)
+ GET / 200 in 6645ms
+ ✓ Compiled in 339ms (234 modules)
+ GET / 200 in 116ms
+ GET / 200 in 289ms
+ GET / 200 in 212ms
+ GET / 200 in 258ms
+ GET / 200 in 173ms
+ GET / 200 in 53ms
+ GET / 200 in 72ms
+ GET / 200 in 48ms
+ GET / 200 in 61ms
+ GET / 200 in 97ms
+ GET / 200 in 88ms
+ GET / 200 in 106ms
+ GET / 200 in 68ms
+ GET / 200 in 106ms
+ GET / 200 in 42ms
+ GET / 200 in 47ms
+ GET / 200 in 97ms
+ GET / 200 in 56ms
+ GET / 200 in 42ms
+ GET / 200 in 59ms
+ ✓ Compiled in 807ms (234 modules)
+ ✓ Compiled in 3.5s (717 modules)
+ ✓ Compiled in 1010ms (731 modules)
+ ✓ Compiled in 2s (731 modules)
+ ✓ Compiled in 510ms (373 modules)
+ GET / 200 in 194ms
+ GET / 200 in 58ms
+ GET / 200 in 39ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 8.1s (1760 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 722ms (1763 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.2s (1990 modules)
+ GET /players/201939 404 in 11333ms
+ GET /players/201939 500 in 641ms
+ GET /players/201939 500 in 44ms
+[?25h

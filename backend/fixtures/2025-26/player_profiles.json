@@ -1,0 +1,30 @@
+[
+  {
+    "nba_player_id": 201939,
+    "birthdate": "1988-03-14",
+    "height": "6-2",
+    "weight_pounds": 185,
+    "active": true
+  },
+  {
+    "nba_player_id": 2544,
+    "birthdate": "1984-12-30",
+    "height": "6-9",
+    "weight_pounds": 250,
+    "active": true
+  },
+  {
+    "nba_player_id": 1629029,
+    "birthdate": "1999-02-28",
+    "height": "6-7",
+    "weight_pounds": 230,
+    "active": true
+  },
+  {
+    "nba_player_id": 1630162,
+    "birthdate": "2001-08-05",
+    "height": "6-4",
+    "weight_pounds": 225,
+    "active": true
+  }
+]

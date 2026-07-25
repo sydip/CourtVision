@@ -1,0 +1,1 @@
+"""HoopsIQ FastAPI backend package."""

@@ -1,0 +1,26 @@
+{
+  "PlayerGameLog": [
+    {
+      "AST": 7,
+      "BLK": 0,
+      "FG3A": 11,
+      "FG3M": 5,
+      "FGA": 18,
+      "FGM": 9,
+      "FTA": 5,
+      "FTM": 5,
+      "GAME_DATE": "OCT 21, 2025",
+      "Game_ID": "0022500001",
+      "MATCHUP": "GSW vs. LAL",
+      "MIN": 31,
+      "PF": 3,
+      "PLUS_MINUS": 8,
+      "PTS": 28,
+      "Player_ID": 201939,
+      "REB": 4,
+      "STL": 1,
+      "TOV": 2,
+      "WL": "W"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "nba_game_id": "0022500001",
+    "season": "2025-26",
+    "game_date": "2025-10-21",
+    "home_team_nba_id": 1610612747,
+    "away_team_nba_id": 1610612744,
+    "home_score": 118,
+    "away_score": 121
+  },
+  {
+    "nba_game_id": "0022500002",
+    "season": "2025-26",
+    "game_date": "2025-10-22",
+    "home_team_nba_id": 1610612750,
+    "away_team_nba_id": 1610612742,
+    "home_score": 112,
+    "away_score": 116
+  }
+]

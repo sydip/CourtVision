@@ -1,0 +1,19 @@
+
+> @hoopsiq/frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 3.2s
+ ○ Compiling /assistant ...
+ ✓ Compiled /assistant in 11s (1762 modules)
+ GET /assistant 200 in 10602ms
+ GET /assistant 200 in 11519ms
+ ✓ Compiled in 928ms (1762 modules)
+ GET /assistant 200 in 219ms
+ ✓ Compiled in 409ms (888 modules)
+ ✓ Compiled in 372ms (888 modules)
+ ✓ Compiled in 399ms (888 modules)
+[?25h
