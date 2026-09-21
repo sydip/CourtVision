@@ -3,17 +3,20 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hoopsiq-backend"
+name = "courtvision-backend"
 version = "0.1.0"
-description = "FastAPI backend foundation for HoopsIQ"
+description = "FastAPI backend foundation for CourtVision"
 requires-python = ">=3.11"
 dependencies = [
   "alembic>=1.13",
   "anthropic>=0.40",
   "fastapi>=0.115",
+  "joblib>=1.4",
   "nba_api>=1.6",
+  "numpy>=1.26",
   "pydantic>=2.7",
   "psycopg[binary]>=3.2",
+  "scikit-learn>=1.5",
   "sqlalchemy>=2.0",
   "uvicorn[standard]>=0.30"
 ]

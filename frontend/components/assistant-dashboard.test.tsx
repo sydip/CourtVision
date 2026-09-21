@@ -1,15 +1,17 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AssistantDashboard } from "@/components/assistant-dashboard";
-import { getAwardPrediction } from "@/lib/api/hoopsiq";
+import { getAwardPrediction } from "@/lib/api/courtvision";
+import { SeasonProvider } from "@/lib/state/season-context";
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getAwardPrediction: vi.fn(),
   getStandingsPrediction: vi.fn(),
   sendAssistantMessage: vi.fn(),
+  getSeasons: vi.fn().mockResolvedValue({ seasons: ["2025-26"] }),
 }));
 
 vi.stubGlobal(
@@ -68,6 +70,8 @@ describe("AssistantDashboard", () => {
       ],
       warnings: [],
       methodology: "Transparent test projection. Probabilities are not guarantees.",
+      disclaimer:
+        "Experimental Jordan model estimate, not a guaranteed outcome or betting recommendation.",
     });
     render(<AssistantDashboard />);
 
@@ -76,5 +80,23 @@ describe("AssistantDashboard", () => {
     expect(await screen.findByText("Sample Player")).toBeInTheDocument();
     expect(screen.getByText("34.0%")).toBeInTheDocument();
     expect(screen.getByText("Why the model leads here")).toBeInTheDocument();
+    expect(
+      screen.getByText(/not a guaranteed outcome or betting recommendation/),
+    ).toBeInTheDocument();
+  });
+
+  it("hides Jordan prediction controls outside 2025-26", async () => {
+    window.history.replaceState({}, "", "/assistant?season=2026-27");
+    render(
+      <SeasonProvider>
+        <AssistantDashboard />
+      </SeasonProvider>,
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText("Jordan prediction mode is only available for the 2025–26 season."),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("button", { name: "MVP" })).not.toBeInTheDocument();
   });
 });

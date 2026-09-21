@@ -60,6 +60,11 @@ def calculate_season_summary(
         three_point_percentage=_ratio_or_none(
             total_three_pointers_made, total_three_point_attempts
         ),
+        effective_field_goal_percentage=_effective_field_goal_percentage(
+            total_field_goals_made,
+            total_three_pointers_made,
+            total_field_goal_attempts,
+        ),
         points_per_36=per_36.points,
         rebounds_per_36=per_36.rebounds,
         assists_per_36=per_36.assists,
@@ -77,6 +82,14 @@ def _ratio_or_none(made: int, attempted: int) -> float | None:
     if attempted <= 0:
         return None
     return made / attempted
+
+
+def _effective_field_goal_percentage(
+    field_goals_made: int, three_pointers_made: int, field_goal_attempts: int
+) -> float | None:
+    if field_goal_attempts <= 0:
+        return None
+    return (field_goals_made + 0.5 * three_pointers_made) / field_goal_attempts
 
 
 def _mean_or_none(values: list[float]) -> float | None:

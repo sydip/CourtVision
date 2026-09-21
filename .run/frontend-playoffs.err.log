@@ -1,0 +1,292 @@
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ ./components/app-shell.tsx
+Error: 
+  [31mx[0m Unexpected token `main`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\saide\.vscode\CourtVision\frontend\components\app-shell.tsx[0m:66:1]
+ [2m66[0m |   const { season, seasons, setSeason, isLoading, isSupported } = useSeason();
+ [2m67[0m | 
+ [2m68[0m |   return (
+ [2m69[0m |     <main
+    : [31;1m     ^^^^[0m
+ [2m70[0m |       className={[
+ [2m71[0m |         "dashboard-shell",
+ [2m72[0m |         isHomeVariant ? "home-shell" : "",
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/app-shell.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/_not-found/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/_not-found/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/_not-found/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\flight-client-entry-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\flight-client-entry-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack-config.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack-config.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/compare/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/compare/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/compare/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/compare/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/compare/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/compare/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/_not-found/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/_not-found/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/_not-found/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/ai-assistant/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\ai-assistant\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/ai-assistant/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/ai-assistant/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\ai-assistant\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/_not-found/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/_not-found/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/_not-found/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\_not-found\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/compare/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/compare/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/compare/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\compare\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../frontend/.next/server/app/ai-assistant/page' in C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server for build dependencies doesn't lead to expected result 'C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\ai-assistant\page.js', but to 'Error: Can't resolve '../../../../frontend/.next/server/app/ai-assistant/page' in 'C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../frontend/.next/server/app/ai-assistant/page (expected C:\Users\saide\.vscode\CourtVision\frontend\.next\server\app\ai-assistant\page.js)
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\require.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\server\load-components.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\utils.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\handle-externals.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-swc-loader.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\bundle5.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\compiled\webpack\webpack.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\plugins\define-env-plugin.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\swc\index.js
+<w>  at file dependencies C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at file C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js
+<w>  at resolve commonjs C:\Users\saide\.vscode\CourtVision\node_modules\next\dist\build\webpack\loaders\next-barrel-loader.js

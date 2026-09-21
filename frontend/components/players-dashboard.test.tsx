@@ -14,7 +14,7 @@ const getTeamsMock = vi.hoisted(() => vi.fn());
 const getPlayersMock = vi.hoisted(() => vi.fn());
 const routerPushMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getAllPlayers: getAllPlayersMock,
   getDataStatus: getDataStatusMock,
   getSeasonSummaries: getSeasonSummariesMock,
@@ -103,9 +103,12 @@ describe("PlayersDashboard", () => {
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Grid" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "List" })).not.toBeInTheDocument();
-    expect(screen.queryByText(/2025-26/)).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Season" })).toHaveValue("2025-26");
     expect(screen.queryByText(/Showing \d+ of \d+ players/i)).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search players")).toBeInTheDocument();
+    expect(document.querySelectorAll(".players-stat-card")).toHaveLength(5);
+    expect(document.querySelector(".player-card-grid")).toBeInTheDocument();
+    expect(document.querySelector(".players-sidebar")).toBeInTheDocument();
   });
 
   it("includes free agents in the active player list", async () => {
@@ -172,7 +175,9 @@ describe("PlayersDashboard", () => {
     });
 
     fireEvent.change(screen.getByLabelText("Select first player"), { target: { value: "201939" } });
-    fireEvent.change(screen.getByLabelText("Select second player"), { target: { value: "201939" } });
+    fireEvent.change(screen.getByLabelText("Select second player"), {
+      target: { value: "201939" },
+    });
 
     expect(screen.getByRole("button", { name: "Compare Players" })).toBeDisabled();
     expect(screen.getByText("Pick two different players to compare.")).toBeInTheDocument();

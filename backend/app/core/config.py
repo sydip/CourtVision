@@ -4,13 +4,15 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 
-DEFAULT_DATABASE_URL = "postgresql://hoopsiq:hoopsiq_dev_password@localhost:5432/hoopsiq"
+DEFAULT_DATABASE_URL = "postgresql://courtvision:courtvision_dev_password@localhost:5432/courtvision"
 DEFAULT_NBA_SEASON = "2025-26"
 DEFAULT_RAW_DATA_DIR = "../data/raw"
 DEFAULT_API_REQUEST_TIMEOUT_SECONDS = 20.0
 DEFAULT_BENCHMARK_MINIMUM_GAMES = 15
 DEFAULT_BENCHMARK_MINIMUM_MINUTES_PER_GAME = 10.0
 DEFAULT_BENCHMARK_SIMILAR_MINUTES_TOLERANCE = 3.0
+DEFAULT_SIMILARITY_MINIMUM_GAMES = 15
+DEFAULT_SIMILARITY_MINIMUM_MINUTES_PER_GAME = 10.0
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
 
 
@@ -23,6 +25,8 @@ class Settings:
     benchmark_minimum_games: int
     benchmark_minimum_minutes_per_game: float
     benchmark_similar_minutes_tolerance: float
+    similarity_minimum_games: int
+    similarity_minimum_minutes_per_game: float
     anthropic_api_key: str | None
     anthropic_model: str
 
@@ -62,6 +66,14 @@ def get_settings() -> Settings:
         benchmark_similar_minutes_tolerance=_float_from_env(
             "BENCHMARK_SIMILAR_MINUTES_TOLERANCE",
             DEFAULT_BENCHMARK_SIMILAR_MINUTES_TOLERANCE,
+        ),
+        similarity_minimum_games=_int_from_env(
+            "SIMILARITY_MINIMUM_GAMES",
+            DEFAULT_SIMILARITY_MINIMUM_GAMES,
+        ),
+        similarity_minimum_minutes_per_game=_float_from_env(
+            "SIMILARITY_MINIMUM_MINUTES_PER_GAME",
+            DEFAULT_SIMILARITY_MINIMUM_MINUTES_PER_GAME,
         ),
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY") or None,
         anthropic_model=os.getenv("ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL),

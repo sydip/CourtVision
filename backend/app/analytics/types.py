@@ -104,6 +104,7 @@ class SeasonSummaryInput:
     blocks_per_game: float | None = None
     field_goal_percentage: float | None = None
     three_point_percentage: float | None = None
+    effective_field_goal_percentage: float | None = None
 
 
 @dataclass(frozen=True)

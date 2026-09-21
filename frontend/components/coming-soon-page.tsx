@@ -3,7 +3,7 @@
 import { AppShell } from "@/components/app-shell";
 
 type ComingSoonPageProps = {
-  section: "Playoffs" | "Draft" | "Offseason";
+  section: "Playoffs" | "Draft";
   title: string;
   blurb: string;
 };

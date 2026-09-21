@@ -8,7 +8,15 @@ from sqlalchemy.orm import Session
 from app.analytics.efficiency import CALCULATED_TRUE_SHOOTING_LABEL
 from app.analytics.rebuild import rebuild_season_analytics
 from app.analytics.types import BenchmarkConfig
-from app.models import Game, Player, PlayerGameStat, PlayerSeasonSummary, Team
+from app.models import (
+    Game,
+    Player,
+    PlayerGameStat,
+    PlayerSeasonSummary,
+    Team,
+    TeamGameStat,
+    TeamSeasonSummary,
+)
 
 
 def test_rebuild_analytics_updates_season_summaries_without_downloads(
@@ -148,3 +156,102 @@ def test_rebuild_analytics_updates_season_summaries_without_downloads(
     assert any(
         warning["code"] == "minimum_games_not_met" for warning in james_summary.analytics_warnings
     )
+
+
+def test_rebuild_isolates_seasons_and_builds_team_outputs(db_session: Session) -> None:
+    team = Team(
+        nba_team_id=1610612744,
+        abbreviation="GSW",
+        city="Golden State",
+        name="Warriors",
+        conference="West",
+        division="Pacific",
+    )
+    player = Player(
+        nba_player_id=201939,
+        slug="stephen-curry-201939",
+        full_name="Stephen Curry",
+        position="G",
+        team=team,
+    )
+    games = [
+        Game(
+            nba_game_id="0022100001",
+            season="2021-22",
+            game_date=date(2021, 10, 20),
+            home_team=team,
+            away_team=team,
+            home_score=100,
+            away_score=90,
+        ),
+        Game(
+            nba_game_id="0022500099",
+            season="2025-26",
+            game_date=date(2025, 10, 20),
+            home_team=team,
+            away_team=team,
+            home_score=120,
+            away_score=100,
+        ),
+    ]
+    db_session.add_all([team, player, *games])
+    db_session.flush()
+    for game, season, points in zip(games, ("2021-22", "2025-26"), (10, 30), strict=True):
+        db_session.add(
+            PlayerGameStat(
+                player=player,
+                game=game,
+                team=team,
+                season=season,
+                minutes=Decimal("30"),
+                points=points,
+                rebounds=5,
+                assists=6,
+                steals=2,
+                blocks=1,
+                field_goals_made=4,
+                field_goals_attempted=10,
+                three_pointers_made=2,
+                three_pointers_attempted=5,
+                free_throws_made=0,
+                free_throws_attempted=0,
+            )
+        )
+        db_session.add(
+            TeamGameStat(
+                team=team,
+                game=game,
+                season=season,
+                is_home=True,
+                points=game.home_score or 0,
+                opponent_points=game.away_score or 0,
+                result="W",
+                source="fixture",
+            )
+        )
+    db_session.commit()
+
+    config = BenchmarkConfig(minimum_games=1, minimum_minutes_per_game=1)
+    rebuild_season_analytics(db_session, "2021-22", config)
+    rebuild_season_analytics(db_session, "2025-26", config)
+    db_session.commit()
+
+    summaries = {
+        summary.season: summary
+        for summary in db_session.query(PlayerSeasonSummary).filter_by(player_id=player.id)
+    }
+    assert summaries["2021-22"].points_per_game == Decimal("10.00")
+    assert summaries["2025-26"].points_per_game == Decimal("30.00")
+    assert summaries["2021-22"].totals["points"] == 10
+    assert summaries["2025-26"].rolling_averages[0]["points_rolling_5"] == 30.0
+    assert summaries["2021-22"].effective_field_goal_percentage == Decimal("0.500")
+    assert summaries["2021-22"].league_percentiles["points_per_game"] == 50.0
+    assert summaries["2025-26"].league_percentiles["points_per_game"] == 50.0
+
+    team_summaries = {
+        summary.season: summary
+        for summary in db_session.query(TeamSeasonSummary).filter_by(team_id=team.id)
+    }
+    assert team_summaries["2021-22"].points_per_game == Decimal("100.00")
+    assert team_summaries["2025-26"].points_per_game == Decimal("120.00")
+    assert team_summaries["2025-26"].leaders["points_per_game"]["player_id"] == player.id

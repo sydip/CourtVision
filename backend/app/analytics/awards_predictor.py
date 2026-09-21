@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.analytics.features import load_player_projection_features, z_scores
 from app.analytics.prediction_types import (
+    JORDAN_PREDICTION_DISCLAIMER,
+    JORDAN_PREDICTION_SEASON,
     AwardPredictionResult,
     PlayerProjectionFeatures,
     RankedCandidate,
@@ -18,7 +20,7 @@ from app.analytics.rookie_predictor import (
 )
 from app.models import Prediction
 
-AWARD_MODEL_VERSION: Final = "hoopsiq-awards-heuristic-v1"
+AWARD_MODEL_VERSION: Final = "courtvision-awards-heuristic-v1"
 SUPPORTED_AWARDS: Final = {
     "MVP",
     "DPOY",
@@ -113,7 +115,13 @@ def predict_awards(
     *,
     limit: int = 10,
     persist: bool = True,
+    _historical_backtest: bool = False,
 ) -> AwardPredictionResult:
+    historical_evaluation = _historical_backtest and not persist
+    if target_season != JORDAN_PREDICTION_SEASON and not historical_evaluation:
+        raise ValueError(
+            "Jordan prediction mode is only available for the 2025-26 season."
+        )
     normalized_award = award_type.strip().upper().replace(" ", "_")
     if normalized_award not in SUPPORTED_AWARDS:
         supported = ", ".join(sorted(SUPPORTED_AWARDS))
@@ -149,7 +157,7 @@ def predict_awards(
         payload=result.as_dict(),
         model_version=result.model_version,
         random_seed=None,
-        notes=f"Grounded in stored {source_season} data and persisted HoopsIQ records.",
+        notes=f"Grounded in stored {source_season} data and persisted CourtVision records.",
     )
     session.add(prediction)
     session.flush()
@@ -250,6 +258,7 @@ def score_award_candidates(
             "form the probability pool, then softmax converts their scores to estimates. "
             "Probabilities are not guarantees."
         ),
+        disclaimer=JORDAN_PREDICTION_DISCLAIMER,
     )
 
 

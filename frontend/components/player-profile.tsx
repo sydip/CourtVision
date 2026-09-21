@@ -21,17 +21,16 @@ import {
 } from "recharts";
 
 import { AppShell } from "@/components/app-shell";
+import { useSeason } from "@/lib/state/season-context";
 import { PlayerPortrait } from "@/components/home-dashboard";
 import { PlayerNumberMark } from "@/components/player-number-mark";
 import {
-  useDataStatus,
   usePlayer,
   usePlayerBenchmarks,
   usePlayerGames,
   usePlayerSplits,
   usePlayerSummary,
   usePlayerTrends,
-  useSeasons,
   useSimilarPlayers,
 } from "@/lib/api/hooks";
 import type {
@@ -70,6 +69,9 @@ type PlayerProfileViewProps = {
   player: PlayerDetail | undefined;
   selectedSeason: string;
   similarPlayers: SimilarPlayer[];
+  similarLoading?: boolean;
+  samePositionOnly?: boolean;
+  onSamePositionOnlyChange?: (value: boolean) => void;
   splits: PlayerSplits | undefined;
   summary: PlayerSeasonSummary | undefined;
   trends: PlayerTrends | undefined;
@@ -485,25 +487,16 @@ export function getThemeStyle(team: TeamLike): CSSProperties {
 }
 
 export function PlayerProfile({ playerId }: { playerId: number }) {
-  const dataStatusQuery = useDataStatus();
-  const seasonsQuery = useSeasons();
-  const playerQuery = usePlayer(playerId);
-  const seasons = seasonsQuery.data?.seasons ?? [dataStatusQuery.data?.current_season ?? "2025-26"];
-  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
-  const season = selectedSeason ?? dataStatusQuery.data?.current_season ?? seasons[0] ?? "2025-26";
-
-  useEffect(() => {
-    if (selectedSeason === null && season) {
-      setSelectedSeason(season);
-    }
-  }, [season, selectedSeason]);
+  const { season } = useSeason();
+  const playerQuery = usePlayer(playerId, season);
 
   const summaryQuery = usePlayerSummary(playerId, season);
   const gamesQuery = usePlayerGames(playerId, season, { limit: 100, sort: "asc" });
   const trendsQuery = usePlayerTrends(playerId, season);
   const splitsQuery = usePlayerSplits(playerId, season);
   const benchmarksQuery = usePlayerBenchmarks(playerId, season);
-  const similarPlayersQuery = useSimilarPlayers(playerId, season, 5);
+  const [samePositionOnly, setSamePositionOnly] = useState(false);
+  const similarPlayersQuery = useSimilarPlayers(playerId, season, 5, samePositionOnly);
 
   return (
     <PlayerProfileView
@@ -511,8 +504,11 @@ export function PlayerProfile({ playerId }: { playerId: number }) {
       games={gamesQuery.data?.items ?? []}
       hasProfileError={playerQuery.isError}
       isLoading={playerQuery.isLoading}
+      onSamePositionOnlyChange={setSamePositionOnly}
       player={playerQuery.data}
+      samePositionOnly={samePositionOnly}
       selectedSeason={season}
+      similarLoading={similarPlayersQuery.isFetching}
       similarPlayers={similarPlayersQuery.data?.players ?? []}
       splits={splitsQuery.data}
       summary={summaryQuery.data}
@@ -529,6 +525,9 @@ export function PlayerProfileView({
   player,
   selectedSeason,
   similarPlayers,
+  similarLoading = false,
+  samePositionOnly = false,
+  onSamePositionOnlyChange,
   splits,
   summary,
   trends,
@@ -751,10 +750,24 @@ export function PlayerProfileView({
           <div className="panel-heading split">
             <div>
               <h2>Similar Players</h2>
-              <p>Nearest statistical matches</p>
+              <p>Statistical similarity — not identical play style</p>
             </div>
+            {onSamePositionOnlyChange ? (
+              <label className="similar-position-toggle">
+                <input
+                  type="checkbox"
+                  checked={samePositionOnly}
+                  onChange={(event) => onSamePositionOnlyChange(event.target.checked)}
+                />
+                <span>Same position only</span>
+              </label>
+            ) : null}
           </div>
-          <SimilarPlayersPanel mainSummary={summary} players={similarPlayers} />
+          <SimilarPlayersPanel
+            isLoading={similarLoading}
+            mainSummary={summary}
+            players={similarPlayers}
+          />
         </section>
       </div>
       {expandedGraph ? (
@@ -1294,9 +1307,11 @@ function PercentileBars({ rows }: { rows: ReturnType<typeof getPositionPercentil
 function SimilarPlayersPanel({
   mainSummary,
   players,
+  isLoading = false,
 }: {
   mainSummary: PlayerSeasonSummary | undefined;
   players: SimilarPlayer[];
+  isLoading?: boolean;
 }) {
   const [hoveredPlayerId, setHoveredPlayerId] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ top: number; left: number } | null>(null);
@@ -1312,10 +1327,12 @@ function SimilarPlayersPanel({
   );
 
   if (players.length === 0) {
-    return (
+    return isLoading ? (
+      <EmptyState title="Ranking matches…" text="Comparing standardized statistical profiles." />
+    ) : (
       <EmptyState
         title="No similar players"
-        text="Stored season summaries are needed to rank statistical matches."
+        text="Qualified season summaries are needed to rank statistical matches."
       />
     );
   }
@@ -1376,6 +1393,15 @@ function SimilarPlayersPanel({
               <span>{formatNumber(item.summary.assists_per_game)} APG</span>
               <span>{formatPercent(item.summary.true_shooting_percentage)} TS</span>
             </div>
+            {item.shared_strengths.length > 0 ? (
+              <div className="similar-strength-chips" aria-label="Shared strengths">
+                {item.shared_strengths.slice(0, 2).map((strength) => (
+                  <span className="similar-strength-chip" key={strength}>
+                    {strength}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="similar-player-visual">
             <PlayerPortrait player={item.player} size="tiny" />
@@ -1426,10 +1452,53 @@ function SimilarPlayerHoverCard({
     >
       <div className="similar-player-hover-card" style={getThemeStyle(item.player.team)}>
         <strong>{item.player.full_name}</strong>
+        <p className="similar-hover-score">
+          {formatNumber(item.similarity_score, 1)} statistical similarity
+        </p>
         <p>{buildSimilarityNote(mainSummary, item)}</p>
+        {item.shared_strengths.length > 0 ? (
+          <p className="similar-hover-insight">
+            <b>Shared strengths:</b> {item.shared_strengths.join(", ")}
+          </p>
+        ) : null}
+        {item.largest_differences.length > 0 ? (
+          <p className="similar-hover-insight">
+            <b>Biggest differences:</b> {item.largest_differences.join(", ")}
+          </p>
+        ) : null}
+        {item.feature_comparisons.length > 0 ? (
+          <table className="similar-feature-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Selected</th>
+                <th>{item.player.last_name}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {item.feature_comparisons.map((comparison) => (
+                <tr key={comparison.feature}>
+                  <td>{comparison.label}</td>
+                  <td>{formatFeatureValue(comparison.unit, comparison.player_value)}</td>
+                  <td>{formatFeatureValue(comparison.unit, comparison.candidate_value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
       </div>
     </aside>
   );
+}
+
+function formatFeatureValue(unit: string, value: number | null): string {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  if (unit === "percent") {
+    return formatPercent(value);
+  }
+  return formatNumber(value, 1);
 }
 
 function buildSimilarityNote(

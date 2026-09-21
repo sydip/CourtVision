@@ -1,0 +1,9 @@
+=== sync-season finished; rebuilding analytics for 2024-25 ===
+{
+  "season": "2024-25",
+  "players_processed": 2,
+  "summaries_created": 0,
+  "summaries_updated": 2,
+  "warnings": []
+}
+=== REBUILD 2024-25 DONE ===

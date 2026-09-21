@@ -16,15 +16,15 @@ import {
   getSeasons,
   getSimilarPlayers,
   type PlayerGamesParams,
-} from "@/lib/api/hoopsiq";
+} from "@/lib/api/courtvision";
 
 export const queryKeys = {
   compare: (playerA: number, playerB: number, season: string) =>
     ["compare", playerA, playerB, season] as const,
-  dataStatus: ["data-status"] as const,
+  dataStatus: (season: string) => ["data-status", season] as const,
   seasons: ["seasons"] as const,
-  players: (q: string, limit: number) => ["players", q, limit] as const,
-  player: (playerId: number) => ["player", playerId] as const,
+  players: (season: string, q: string, limit: number) => ["players", season, q, limit] as const,
+  player: (playerId: number, season: string) => ["player", playerId, season] as const,
   summary: (playerId: number, season: string) => ["summary", playerId, season] as const,
   games: (playerId: number, season: string, params: PlayerGamesParams) =>
     ["games", playerId, season, params] as const,
@@ -32,8 +32,8 @@ export const queryKeys = {
   splits: (playerId: number, season: string) => ["splits", playerId, season] as const,
   benchmarks: (playerId: number, season: string) => ["benchmarks", playerId, season] as const,
   report: (playerId: number, season: string) => ["report", playerId, season] as const,
-  similarPlayers: (playerId: number, season: string, limit: number) =>
-    ["similar-players", playerId, season, limit] as const,
+  similarPlayers: (playerId: number, season: string, limit: number, samePositionOnly: boolean) =>
+    ["similar-players", playerId, season, limit, samePositionOnly] as const,
 };
 
 export function useCompare(playerA: number | null, playerB: number | null, season: string) {
@@ -51,10 +51,10 @@ export function useCompare(playerA: number | null, playerB: number | null, seaso
   });
 }
 
-export function useDataStatus() {
+export function useDataStatus(season = "2025-26") {
   return useQuery({
-    queryKey: queryKeys.dataStatus,
-    queryFn: getDataStatus,
+    queryKey: queryKeys.dataStatus(season),
+    queryFn: () => getDataStatus(season),
     staleTime: 30_000,
   });
 }
@@ -67,19 +67,19 @@ export function useSeasons() {
   });
 }
 
-export function usePlayers(q: string, limit = 8) {
+export function usePlayers(q: string, limit = 8, season = "2025-26") {
   const normalizedQuery = q.trim();
   return useQuery({
-    queryKey: queryKeys.players(normalizedQuery, limit),
-    queryFn: () => getPlayers({ q: normalizedQuery || undefined, limit }),
+    queryKey: queryKeys.players(season, normalizedQuery, limit),
+    queryFn: () => getPlayers({ q: normalizedQuery || undefined, limit, season }),
     staleTime: 30_000,
   });
 }
 
-export function usePlayer(playerId: number) {
+export function usePlayer(playerId: number, season = "2025-26") {
   return useQuery({
-    queryKey: queryKeys.player(playerId),
-    queryFn: () => getPlayer(playerId),
+    queryKey: queryKeys.player(playerId, season),
+    queryFn: () => getPlayer(playerId, season),
     enabled: Number.isFinite(playerId) && playerId > 0,
     retry: false,
   });
@@ -139,10 +139,15 @@ export function usePlayerReport(playerId: number, season: string) {
   });
 }
 
-export function useSimilarPlayers(playerId: number, season: string, limit = 5) {
+export function useSimilarPlayers(
+  playerId: number,
+  season: string,
+  limit = 5,
+  samePositionOnly = false,
+) {
   return useQuery({
-    queryKey: queryKeys.similarPlayers(playerId, season, limit),
-    queryFn: () => getSimilarPlayers(playerId, season, limit),
+    queryKey: queryKeys.similarPlayers(playerId, season, limit, samePositionOnly),
+    queryFn: () => getSimilarPlayers(playerId, season, limit, samePositionOnly),
     enabled: Number.isFinite(playerId) && playerId > 0 && season.length > 0,
     retry: false,
   });

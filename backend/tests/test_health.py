@@ -18,7 +18,7 @@ def test_health_endpoint_returns_configured_status(monkeypatch) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["service"] == "hoopsiq-api"
+    assert body["service"] == "courtvision-api"
     assert body["nba_season"] == "2025-26"
     assert body["database_configured"] is True
     assert body["raw_data_dir"] == "./test-raw"

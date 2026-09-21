@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import Protocol, TypeAlias, cast
+from typing import Literal, Protocol, TypeAlias, cast
 
 from app.data.raw_cache import JsonPayload, RawResponseCache
 from app.data.source_schemas import (
@@ -15,10 +15,31 @@ from app.data.source_schemas import (
     SourcePlayer,
     SourcePlayerGameLog,
     SourcePlayerProfile,
+    SourceStanding,
     SourceTeam,
+    SourceTeamGameLog,
 )
 
 RawMapping: TypeAlias = Mapping[str, object]
+EASTERN_TEAM_ABBREVIATIONS = frozenset(
+    {
+        "ATL",
+        "BOS",
+        "BKN",
+        "CHA",
+        "CHI",
+        "CLE",
+        "DET",
+        "IND",
+        "MIA",
+        "MIL",
+        "NYK",
+        "ORL",
+        "PHI",
+        "TOR",
+        "WAS",
+    }
+)
 RawFetcher: TypeAlias = Callable[[], JsonPayload]
 RawValidator: TypeAlias = Callable[[JsonPayload], None]
 EndpointFactory: TypeAlias = Callable[..., "NormalizedEndpoint"]
@@ -66,12 +87,18 @@ class NbaApiClientProtocol(Protocol):
         timeout_seconds: float,
     ) -> JsonPayload: ...
 
+    def get_league_player_game_log(self, season: str, timeout_seconds: float) -> JsonPayload: ...
+
     def get_league_player_stats(
         self,
         season: str,
         measure_type: str,
         timeout_seconds: float,
     ) -> JsonPayload: ...
+
+    def get_league_team_game_log(self, season: str, timeout_seconds: float) -> JsonPayload: ...
+
+    def get_league_team_stats(self, season: str, timeout_seconds: float) -> JsonPayload: ...
 
 
 class NbaApiClient:
@@ -112,6 +139,17 @@ class NbaApiClient:
         )
         return endpoint.get_normalized_dict()
 
+    def get_league_player_game_log(self, season: str, timeout_seconds: float) -> JsonPayload:
+        module = importlib.import_module("nba_api.stats.endpoints.leaguegamelog")
+        endpoint_factory = cast(EndpointFactory, module.__dict__["LeagueGameLog"])
+        endpoint = endpoint_factory(
+            player_or_team_abbreviation="P",
+            season=season,
+            season_type_all_star="Regular Season",
+            timeout=timeout_seconds,
+        )
+        return endpoint.get_normalized_dict()
+
     def get_league_player_stats(
         self,
         season: str,
@@ -124,6 +162,28 @@ class NbaApiClient:
             season=season,
             measure_type_detailed_defense=measure_type,
             per_mode_detailed="PerGame",
+            timeout=timeout_seconds,
+        )
+        return endpoint.get_normalized_dict()
+
+    def get_league_team_game_log(self, season: str, timeout_seconds: float) -> JsonPayload:
+        module = importlib.import_module("nba_api.stats.endpoints.leaguegamelog")
+        endpoint_factory = cast(EndpointFactory, module.__dict__["LeagueGameLog"])
+        endpoint = endpoint_factory(
+            player_or_team_abbreviation="T",
+            season=season,
+            season_type_all_star="Regular Season",
+            timeout=timeout_seconds,
+        )
+        return endpoint.get_normalized_dict()
+
+    def get_league_team_stats(self, season: str, timeout_seconds: float) -> JsonPayload:
+        module = importlib.import_module("nba_api.stats.endpoints.leaguedashteamstats")
+        endpoint_factory = cast(EndpointFactory, module.__dict__["LeagueDashTeamStats"])
+        endpoint = endpoint_factory(
+            season=season,
+            season_type_all_star="Regular Season",
+            per_mode_detailed="Totals",
             timeout=timeout_seconds,
         )
         return endpoint.get_normalized_dict()
@@ -141,6 +201,8 @@ class NbaApiProvider:
         max_retries: int = 2,
         backoff_seconds: float = 1.0,
         request_delay_seconds: float = 0.6,
+        roster_source: Literal["active", "season"] = "active",
+        game_log_source: Literal["per_player", "league"] = "per_player",
         client: NbaApiClientProtocol | None = None,
         sleep_func: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -153,6 +215,9 @@ class NbaApiProvider:
         self.timeout_seconds = timeout_seconds
         self.player_ids = list(player_ids or [])
         self.player_limit = player_limit
+        self.roster_source = roster_source
+        self.game_log_source = game_log_source
+        self._bulk_game_logs: dict[int, list[RawMapping]] | None = None
         self.max_retries = max_retries
         self.backoff_seconds = backoff_seconds
         self.request_delay_seconds = request_delay_seconds
@@ -187,31 +252,64 @@ class NbaApiProvider:
             _validate_static_list("static_players"),
         )
         rows = _ensure_mapping_rows(raw, "static_players")
-        if self.player_ids:
-            selected_ids = set(self.player_ids)
-            rows = [row for row in rows if _optional_int(row, "id") in selected_ids]
-        else:
-            rows = [row for row in rows if _optional_bool(row, "is_active") is not False]
-            rows = sorted(rows, key=lambda row: _optional_str(row, "full_name") or "")
-            if self.player_limit is not None:
-                rows = rows[: self.player_limit]
+        static_by_id: dict[int, RawMapping] = {}
+        for row in rows:
+            player_id = _optional_int(row, "id")
+            if player_id is not None:
+                static_by_id[player_id] = row
 
         team_ids_by_player_id = self._team_ids_by_player_id()
+        selected_ids = self._select_player_ids(rows, static_by_id, team_ids_by_player_id)
+
         players: list[SourcePlayer] = []
-        for row in rows:
-            full_name = _required_str(row, "full_name")
-            player_id = _required_int(row, "id")
+        for player_id in selected_ids:
+            static_row = static_by_id.get(player_id)
+            if static_row is None:
+                # Present in the season's league stats but absent from the static index
+                # (very rare); skip rather than fabricate identity fields.
+                continue
+            full_name = _required_str(static_row, "full_name")
             players.append(
                 SourcePlayer(
                     nba_player_id=player_id,
                     slug=_slugify(f"{full_name}-{player_id}"),
                     full_name=full_name,
-                    first_name=_optional_str(row, "first_name"),
-                    last_name=_optional_str(row, "last_name"),
+                    first_name=_optional_str(static_row, "first_name"),
+                    last_name=_optional_str(static_row, "last_name"),
                     team_nba_id=team_ids_by_player_id.get(player_id),
                 )
             )
         return players
+
+    def _select_player_ids(
+        self,
+        static_rows: list[RawMapping],
+        static_by_id: dict[int, RawMapping],
+        team_ids_by_player_id: dict[int, int],
+    ) -> list[int]:
+        if self.player_ids:
+            return list(self.player_ids)
+
+        if self.roster_source == "season":
+            # Roster is every player who actually appeared in the selected season, taken
+            # from that season's league statistics rather than today's active flag.
+            ordered = sorted(
+                team_ids_by_player_id.keys(),
+                key=lambda pid: (_optional_str(static_by_id.get(pid, {}), "full_name") or "", pid),
+            )
+            if self.player_limit is not None:
+                ordered = ordered[: self.player_limit]
+            return ordered
+
+        active_rows = [row for row in static_rows if _optional_bool(row, "is_active") is not False]
+        active_rows = sorted(active_rows, key=lambda row: _optional_str(row, "full_name") or "")
+        if self.player_limit is not None:
+            active_rows = active_rows[: self.player_limit]
+        return [
+            player_id
+            for row in active_rows
+            if (player_id := _optional_int(row, "id")) is not None
+        ]
 
     def get_player_profiles(self) -> list[SourcePlayerProfile]:
         profiles: list[SourcePlayerProfile] = []
@@ -348,6 +446,85 @@ class NbaApiProvider:
                     break
         return summaries
 
+    def get_team_game_logs(self, season: str) -> list[SourceTeamGameLog]:
+        if season != self.season:
+            raise ValueError(f"Provider was configured for {self.season}, not {season}.")
+        endpoint = f"league_team_game_log_{season}"
+        raw = self._load_raw(
+            endpoint,
+            lambda: self.client.get_league_team_game_log(season, self.timeout_seconds),
+            _validate_dataset(endpoint, "LeagueGameLog"),
+        )
+        rows = _dataset_rows(raw, "LeagueGameLog", endpoint)
+        points_by_game_team = {
+            (_required_str(row, "GAME_ID"), _required_int(row, "TEAM_ID")): _int_or_zero(row, "PTS")
+            for row in rows
+        }
+        teams_by_abbreviation = self._get_teams_by_abbreviation()
+        results: list[SourceTeamGameLog] = []
+        for row in rows:
+            matchup = _required_str(row, "MATCHUP")
+            team_abbreviation, home_abbreviation, away_abbreviation = _parse_matchup(matchup)
+            opponent_abbreviation = (
+                away_abbreviation if team_abbreviation == home_abbreviation else home_abbreviation
+            )
+            opponent = teams_by_abbreviation[opponent_abbreviation]
+            game_id = _required_str(row, "GAME_ID")
+            results.append(
+                SourceTeamGameLog(
+                    nba_team_id=_required_int(row, "TEAM_ID"),
+                    nba_game_id=game_id,
+                    season=season,
+                    is_home=team_abbreviation == home_abbreviation,
+                    points=_int_or_zero(row, "PTS"),
+                    opponent_points=points_by_game_team[(game_id, opponent.nba_team_id)],
+                    result=_required_str(row, "WL"),
+                )
+            )
+        return results
+
+    def get_standings(self, season: str) -> list[SourceStanding]:
+        if season != self.season:
+            raise ValueError(f"Provider was configured for {self.season}, not {season}.")
+        endpoint = f"league_team_stats_{season}"
+        raw = self._load_raw(
+            endpoint,
+            lambda: self.client.get_league_team_stats(season, self.timeout_seconds),
+            _validate_dataset(endpoint, "LeagueDashTeamStats"),
+        )
+        rows = _dataset_rows(raw, "LeagueDashTeamStats", endpoint)
+        # LeagueDashTeamStats identifies teams by TEAM_ID; the TEAM_ABBREVIATION column is
+        # not always present (e.g. some historical seasons), so resolve via id.
+        teams_by_id = {team.nba_team_id: team for team in self.get_teams()}
+        grouped: dict[str, list[tuple[SourceTeam, RawMapping]]] = {"East": [], "West": []}
+        for row in rows:
+            team_id = _optional_int(row, "TEAM_ID")
+            team = teams_by_id.get(team_id) if team_id is not None else None
+            if team is None:
+                # Skip league-average or otherwise unrecognized aggregate rows.
+                continue
+            conference = "East" if team.abbreviation in EASTERN_TEAM_ABBREVIATIONS else "West"
+            grouped[conference].append((team, row))
+        results: list[SourceStanding] = []
+        for conference, entries in grouped.items():
+            ordered = sorted(
+                entries,
+                key=lambda entry: (-_int_or_zero(entry[1], "W"), _int_or_zero(entry[1], "L")),
+            )
+            for rank, (team, row) in enumerate(ordered, start=1):
+                results.append(
+                    SourceStanding(
+                        nba_team_id=team.nba_team_id,
+                        season=season,
+                        conference=conference,
+                        rank=rank,
+                        wins=_int_or_zero(row, "W"),
+                        losses=_int_or_zero(row, "L"),
+                        win_pct=_optional_decimal(row, "W_PCT") or Decimal(0),
+                    )
+                )
+        return results
+
     def _target_player_ids(self) -> list[int]:
         if self.player_ids:
             return list(self.player_ids)
@@ -372,6 +549,9 @@ class NbaApiProvider:
         return team_ids
 
     def _player_game_log_rows(self, player_id: int) -> list[RawMapping]:
+        if self.game_log_source == "league":
+            return self._bulk_player_game_log_rows().get(player_id, [])
+
         endpoint = f"player_game_log_{self.season}_{player_id}"
 
         def fetch_game_log(player_id: int = player_id) -> JsonPayload:
@@ -383,6 +563,29 @@ class NbaApiProvider:
             _validate_dataset(endpoint, "PlayerGameLog"),
         )
         return _dataset_rows(raw, "PlayerGameLog", endpoint)
+
+    def _bulk_player_game_log_rows(self) -> dict[int, list[RawMapping]]:
+        """Fetch the entire season's player game logs in a single league-wide request.
+
+        The per-player ``PlayerGameLog`` path costs one network call per player
+        (hundreds per season). ``LeagueGameLog`` returns every player's logs at once,
+        so this groups that single response by player id and reuses it thereafter.
+        """
+        if self._bulk_game_logs is None:
+            endpoint = f"league_player_game_log_{self.season}"
+            raw = self._load_raw(
+                endpoint,
+                lambda: self.client.get_league_player_game_log(self.season, self.timeout_seconds),
+                _validate_dataset(endpoint, "LeagueGameLog"),
+            )
+            rows = _dataset_rows(raw, "LeagueGameLog", endpoint)
+            grouped: dict[int, list[RawMapping]] = {}
+            for row in rows:
+                player_id = _optional_int(row, "PLAYER_ID")
+                if player_id is not None:
+                    grouped.setdefault(player_id, []).append(row)
+            self._bulk_game_logs = grouped
+        return self._bulk_game_logs
 
     def _league_player_stat_rows(self, measure_type: str) -> list[RawMapping]:
         endpoint = f"league_player_stats_{self.season}_{measure_type.lower()}"

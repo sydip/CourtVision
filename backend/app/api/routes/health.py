@@ -12,7 +12,7 @@ router = APIRouter(tags=["system"])
 
 class HealthResponse(BaseModel):
     status: str = "ok"
-    service: str = "hoopsiq-api"
+    service: str = "courtvision-api"
     nba_season: str
     database_configured: bool
     raw_data_dir: str

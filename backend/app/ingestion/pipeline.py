@@ -36,7 +36,10 @@ from app.ingestion.upserts import (
     upsert_player_game_stat,
     upsert_player_profile,
     upsert_player_season_summary,
+    upsert_roster_membership,
+    upsert_standing,
     upsert_team,
+    upsert_team_game_stat,
 )
 from app.models import SyncRun
 
@@ -49,6 +52,9 @@ IngestionStep = Literal[
     "games",
     "game_logs",
     "league_statistics",
+    "rosters",
+    "team_game_logs",
+    "standings",
 ]
 ALL_INGESTION_STEPS: tuple[IngestionStep, ...] = (
     "teams",
@@ -57,6 +63,9 @@ ALL_INGESTION_STEPS: tuple[IngestionStep, ...] = (
     "games",
     "game_logs",
     "league_statistics",
+    "rosters",
+    "team_game_logs",
+    "standings",
 )
 ProgressReporter = Callable[[str, "IngestionSummary"], None]
 
@@ -137,6 +146,23 @@ def run_provider_ingestion(
                 _ingest_player_game_logs(session, provider, season, summary)
             elif step == "league_statistics":
                 _ingest_league_player_statistics(session, provider, season, summary)
+            elif step == "rosters":
+                _ingest_optional(
+                    session,
+                    provider,
+                    "get_roster_memberships",
+                    season,
+                    summary,
+                    upsert_roster_membership,
+                )
+            elif step == "team_game_logs":
+                _ingest_optional(
+                    session, provider, "get_team_game_logs", season, summary, upsert_team_game_stat
+                )
+            elif step == "standings":
+                _ingest_optional(
+                    session, provider, "get_standings", season, summary, upsert_standing
+                )
             _report_progress(progress, f"completed {step}", summary)
         _finish_sync_run(sync_run, summary)
     except Exception as exc:
@@ -145,6 +171,7 @@ def run_provider_ingestion(
             sync_run.status = "failed"
             sync_run.finished_at = datetime.now(UTC)
             sync_run.error_message = error_message
+            sync_run.failed_count = 1
             summary.status = "failed"
             summary.error_message = error_message
             raise
@@ -160,6 +187,7 @@ def run_provider_ingestion(
             updated_count=summary.updated,
             rejected_count=summary.rejected,
             error_message=error_message,
+            failed_count=1,
         )
         session.add(failed_sync_run)
         session.flush()
@@ -341,6 +369,27 @@ def _record_outcome(summary: IngestionSummary, outcome: UpsertOutcome) -> None:
         summary.updated += 1
     else:
         summary.unchanged += 1
+
+
+def _ingest_optional(
+    session: Session,
+    provider: BasketballDataProvider,
+    method_name: str,
+    season: str,
+    summary: IngestionSummary,
+    upsert: Callable[..., UpsertOutcome],
+) -> None:
+    loader = getattr(provider, method_name, None)
+    if loader is None:
+        return
+    records = loader(season)
+    summary.fetched += len(records)
+    for record in records:
+        try:
+            _record_outcome(summary, upsert(session, record))
+        except (RecordRejectedError, ValueError) as exc:
+            summary.rejected += 1
+            logger.warning("Rejected %s record: %s", method_name, exc)
 
 
 def _record_rejections(summary: IngestionSummary, rejections: list[RejectedRecord]) -> None:

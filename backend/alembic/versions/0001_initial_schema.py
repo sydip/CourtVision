@@ -1,4 +1,4 @@
-"""Create initial HoopsIQ persistence schema.
+"""Create initial CourtVision persistence schema.
 
 Revision ID: 0001_initial_schema
 Revises:

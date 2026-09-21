@@ -9,10 +9,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.analytics.features import resolve_source_season
-from app.analytics.prediction_types import AwardPredictionResult, RankedCandidate
+from app.analytics.prediction_types import (
+    JORDAN_PREDICTION_DISCLAIMER,
+    AwardPredictionResult,
+    RankedCandidate,
+)
 from app.models import DraftPick, PlayerSeasonSummary, Team
 
-ROY_MODEL_VERSION = "hoopsiq-draft-roy-v1"
+ROY_MODEL_VERSION = "courtvision-draft-roy-v1"
 
 
 @dataclass(frozen=True)
@@ -167,6 +171,7 @@ def score_rookie_candidates(
             "converts scores across all 60 drafted players to estimates. Probabilities "
             "are not guarantees."
         ),
+        disclaimer=JORDAN_PREDICTION_DISCLAIMER,
     )
 
 

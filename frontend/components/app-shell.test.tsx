@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,7 +10,7 @@ import type { PlayerListItem, Team } from "@/lib/api/schemas";
 const getPlayersMock = vi.hoisted(() => vi.fn());
 const getTeamsMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getPlayers: getPlayersMock,
   getTeams: getTeamsMock,
 }));
@@ -85,6 +85,11 @@ describe("AppShell", () => {
     );
     expect(screen.getAllByRole("link", { name: "Players" })[0]).toHaveAttribute("href", "/players");
     expect(screen.getAllByRole("link", { name: "Teams" })[0]).toHaveAttribute("href", "/rosters");
+    expect(
+      within(screen.getByRole("navigation", { name: "Section navigation" }))
+        .getAllByRole("link")
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(["Home", "Players", "Teams", "Standings", "Playoffs", "Draft", "Compare", "✦Jordan"]);
   });
 
   it("shows global player lookup results", async () => {
@@ -110,7 +115,11 @@ describe("AppShell", () => {
     });
 
     await waitFor(() => {
-      expect(getPlayersMock).toHaveBeenCalledWith({ q: "lebron", limit: 6 });
+      expect(getPlayersMock).toHaveBeenCalledWith({
+        q: "lebron",
+        limit: 6,
+        season: "2025-26",
+      });
     });
     expect(await screen.findByRole("option", { name: /LeBron James/i })).toHaveAttribute(
       "href",

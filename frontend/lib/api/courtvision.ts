@@ -1,6 +1,8 @@
 import { fetchApi, toQueryString } from "@/lib/api/client";
 import {
   assistantChatResponseSchema,
+  assistantQueryResponseSchema,
+  allNbaPredictionSchema,
   awardPredictionSchema,
   benchmarksResponseSchema,
   compareResponseSchema,
@@ -19,8 +21,14 @@ import {
   teamsResponseSchema,
   trendsResponseSchema,
   predictionLogSchema,
+  predictionAvailabilitySchema,
+  finalsWinnerPredictionSchema,
+  seasonStandingsPredictionSchema,
   standingsPredictionSchema,
+  standingsResponseSchema,
   type AssistantChatResponse,
+  type AssistantQueryResponse,
+  type AllNbaPrediction,
   type AwardPrediction,
   type CompareResponse,
   type DataStatus,
@@ -40,13 +48,18 @@ import {
   type SeasonsResponse,
   type TeamsResponse,
   type PredictionLog,
+  type PredictionAvailability,
+  type FinalsWinnerPrediction,
+  type SeasonStandingsPrediction,
   type StandingsPrediction,
+  type StandingsResponse,
 } from "@/lib/api/schemas";
 
 export type PlayerSearchParams = {
   q?: string;
   limit?: number;
   offset?: number;
+  season?: string;
 };
 
 export type PlayerGamesParams = {
@@ -58,8 +71,41 @@ export type PlayerGamesParams = {
   sort?: "asc" | "desc";
 };
 
-export function getDataStatus(): Promise<DataStatus> {
-  return fetchApi("/api/data-status", dataStatusSchema);
+export type AssistantQueryContext = {
+  currentPage?: string;
+  playerId?: number | null;
+  teamId?: number | null;
+};
+
+export function queryAssistant(
+  question: string,
+  season: string,
+  context: AssistantQueryContext = { currentPage: "ai-assistant" },
+): Promise<AssistantQueryResponse> {
+  return fetchApi("/api/assistant/query", assistantQueryResponseSchema, undefined, {
+    method: "POST",
+    body: JSON.stringify({ question, season, context }),
+  });
+}
+
+export function getDataStatus(season?: string): Promise<DataStatus> {
+  return fetchApi(`/api/data-status${toQueryString({ season })}`, dataStatusSchema);
+}
+
+export function getPredictionAvailability(): Promise<PredictionAvailability> {
+  return fetchApi("/api/predictions/availability", predictionAvailabilitySchema);
+}
+
+export function getAllNbaPrediction(): Promise<AllNbaPrediction> {
+  return fetchApi("/api/predictions/2026-27/all-nba", allNbaPredictionSchema);
+}
+
+export function getSeasonStandingsPrediction(): Promise<SeasonStandingsPrediction> {
+  return fetchApi("/api/predictions/2026-27/standings", seasonStandingsPredictionSchema);
+}
+
+export function getFinalsWinnerPrediction(): Promise<FinalsWinnerPrediction> {
+  return fetchApi("/api/predictions/2026-27/finals-winner", finalsWinnerPredictionSchema);
 }
 
 export function getCompare(
@@ -77,8 +123,12 @@ export function getSeasons(): Promise<SeasonsResponse> {
   return fetchApi("/api/seasons", seasonsResponseSchema);
 }
 
-export function getTeams(): Promise<TeamsResponse> {
-  return fetchApi("/api/teams", teamsResponseSchema);
+export function getTeams(season?: string): Promise<TeamsResponse> {
+  return fetchApi(`/api/teams${toQueryString({ season })}`, teamsResponseSchema);
+}
+
+export function getStandings(season: string): Promise<StandingsResponse> {
+  return fetchApi(`/api/standings${toQueryString({ season })}`, standingsResponseSchema);
 }
 
 export function getDraft(draftYear = 2026): Promise<DraftResponse> {
@@ -98,18 +148,19 @@ export function getPlayers(params: PlayerSearchParams = {}): Promise<PlayersResp
       q: params.q,
       limit: params.limit ?? 8,
       offset: params.offset ?? 0,
+      season: params.season,
     })}`,
     playersResponseSchema,
   );
 }
 
-export async function getAllPlayers(): Promise<PlayerListItem[]> {
+export async function getAllPlayers(season?: string): Promise<PlayerListItem[]> {
   const limit = 100;
   const players: PlayerListItem[] = [];
   let offset = 0;
 
   for (let page = 0; page < 20; page += 1) {
-    const response = await getPlayers({ limit, offset });
+    const response = await getPlayers({ limit, offset, season });
     players.push(...response.items);
 
     if (response.meta.next_offset === null) {
@@ -121,8 +172,8 @@ export async function getAllPlayers(): Promise<PlayerListItem[]> {
   return players;
 }
 
-export function getPlayer(playerId: number): Promise<PlayerDetail> {
-  return fetchApi(`/api/players/${playerId}`, playerDetailSchema);
+export function getPlayer(playerId: number, season?: string): Promise<PlayerDetail> {
+  return fetchApi(`/api/players/${playerId}${toQueryString({ season })}`, playerDetailSchema);
 }
 
 export function getPlayerSummary(playerId: number, season: string): Promise<PlayerSeasonSummary> {
@@ -174,9 +225,13 @@ export function getSimilarPlayers(
   playerId: number,
   season: string,
   limit = 5,
+  samePositionOnly = false,
 ): Promise<SimilarPlayersResponse> {
   return fetchApi(
-    `/api/players/${playerId}/seasons/${season}/similar${toQueryString({ limit })}`,
+    `/api/players/${playerId}/seasons/${season}/similar${toQueryString({
+      limit,
+      same_position_only: samePositionOnly ? true : undefined,
+    })}`,
     similarPlayersResponseSchema,
   );
 }

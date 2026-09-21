@@ -12,13 +12,14 @@ from app.api.routes.assistant import router as assistant_router
 from app.api.routes.data_status import router as data_status_router
 from app.api.routes.health import router as health_router
 from app.api.routes.playoffs import router as playoffs_router
+from app.api.routes.predictions import router as predictions_router
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="HoopsIQ API",
+        title="CourtVision API",
         version="0.1.0",
-        description="Local development API foundation for HoopsIQ.",
+        description="Local development API foundation for CourtVision.",
     )
     app.add_middleware(
         CORSMiddleware,
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(data_status_router, prefix="/api")
     app.include_router(application_router, prefix="/api")
     app.include_router(playoffs_router, prefix="/api")
+    app.include_router(predictions_router, prefix="/api")
     app.include_router(assistant_router, prefix="/api")
     return app
 

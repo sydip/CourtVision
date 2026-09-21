@@ -13,9 +13,16 @@ from app.models.schema import (
     PlayoffSeries,
     PlayoffTeamBoxScore,
     Prediction,
+    PredictionResult,
+    PredictionRun,
+    RosterMembership,
+    Season,
+    StandingsSnapshot,
     SyncRun,
     Team,
+    TeamGameStat,
     TeamSeasonStat,
+    TeamSeasonSummary,
 )
 
 __all__ = [
@@ -33,7 +40,14 @@ __all__ = [
     "PlayoffSeries",
     "PlayoffTeamBoxScore",
     "Prediction",
+    "PredictionResult",
+    "PredictionRun",
+    "RosterMembership",
+    "Season",
+    "StandingsSnapshot",
     "SyncRun",
     "Team",
+    "TeamGameStat",
     "TeamSeasonStat",
+    "TeamSeasonSummary",
 ]

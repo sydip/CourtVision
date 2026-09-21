@@ -1,0 +1,66 @@
+
+> @courtvision/frontend@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3000
+
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:3000
+  - Network:      http://127.0.0.1:3000
+
+ ✓ Starting...
+ ✓ Ready in 15.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 25.5s (735 modules)
+ GET / 200 in 3566ms
+ GET / 200 in 54ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 4.7s (1782 modules)
+ GET /players?season=2025-26 200 in 6090ms
+ ✓ Compiled /rosters in 312ms (1775 modules)
+ GET /rosters?season=2025-26 200 in 404ms
+ GET / 200 in 76ms
+ GET /players 200 in 391ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 1134ms (1775 modules)
+ GET /players/1628983 200 in 2177ms
+ ✓ Compiled /rosters in 511ms (894 modules)
+ GET /rosters 200 in 817ms
+ ○ Compiling /standings ...
+ ✓ Compiled /standings in 1491ms (1787 modules)
+ GET /standings 200 in 1761ms
+ ○ Compiling /playoffs ...
+ ✓ Compiled /playoffs in 1137ms (1798 modules)
+ GET /playoffs 200 in 1463ms
+ ○ Compiling /draft ...
+ ✓ Compiled /draft in 1269ms (1801 modules)
+ GET /draft 200 in 1634ms
+ ○ Compiling /compare ...
+ ✓ Compiled /compare in 2s (1803 modules)
+ GET /compare 200 in 2934ms
+ ○ Compiling /ai-assistant ...
+ ✓ Compiled /ai-assistant in 1463ms (1809 modules)
+ GET /ai-assistant 200 in 2032ms
+ GET /compare 200 in 306ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 1063ms (911 modules)
+ GET /players 200 in 1829ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 564ms (910 modules)
+ GET /players/203999 200 in 849ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1698ms (907 modules)
+ GET / 200 in 2465ms
+ GET /players 200 in 465ms
+ GET /players/1628983 200 in 228ms
+ GET / 200 in 466ms
+ GET /ai-assistant 200 in 223ms
+ GET /draft 200 in 198ms
+ GET /ai-assistant 200 in 58ms
+ GET / 200 in 77ms
+ GET /players/1626164 200 in 141ms
+ GET /ai-assistant 200 in 90ms
+ GET / 200 in 81ms
+ GET /players/1630162 200 in 136ms
+ GET / 200 in 98ms
+ GET /players/202695 200 in 102ms
+ GET / 200 in 139ms
+ GET /compare 200 in 191ms

@@ -14,7 +14,7 @@ describe("fetchBackendHealth", () => {
         ok: true,
         json: async () => ({
           status: "ok",
-          service: "hoopsiq-api",
+          service: "courtvision-api",
           nba_season: "2025-26",
           database_configured: true,
           raw_data_dir: "../data/raw",
@@ -27,7 +27,7 @@ describe("fetchBackendHealth", () => {
     const result = await fetchBackendHealth("http://localhost:8000");
 
     expect(result.ok).toBe(true);
-    expect(result.data?.service).toBe("hoopsiq-api");
+    expect(result.data?.service).toBe("courtvision-api");
     expect(result.data?.nba_season).toBe("2025-26");
   });
 

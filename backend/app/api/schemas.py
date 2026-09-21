@@ -15,12 +15,21 @@ class ErrorResponse(BaseModel):
     error: ApiError
 
 
+class ApiMetadata(BaseModel):
+    season: str
+    dataFreshness: datetime | None
+    source: str = "database"
+
+
 class PageMeta(BaseModel):
     limit: int
     offset: int
     total: int
     next_offset: int | None
     previous_offset: int | None
+    season: str | None = None
+    dataFreshness: datetime | None = None
+    source: str = "database"
 
 
 class TeamResponse(BaseModel):
@@ -52,6 +61,7 @@ class PlayerDetail(PlayerListItem):
     height: str | None
     weight_pounds: int | None
     birthdate: date | None
+    meta: ApiMetadata | None = None
 
 
 class PaginatedPlayersResponse(BaseModel):
@@ -59,8 +69,18 @@ class PaginatedPlayersResponse(BaseModel):
     meta: PageMeta
 
 
+class SeasonItemResponse(BaseModel):
+    season: str
+    displayName: str
+    isCompleted: bool
+    isCurrent: bool
+    supportsPredictions: bool
+    supportsJordanPredictions: bool
+
+
 class SeasonsResponse(BaseModel):
     seasons: list[str]
+    data: list[SeasonItemResponse] = Field(default_factory=list)
 
 
 class PositionsResponse(BaseModel):
@@ -69,6 +89,69 @@ class PositionsResponse(BaseModel):
 
 class TeamsResponse(BaseModel):
     teams: list[TeamResponse]
+    meta: ApiMetadata | None = None
+
+
+class TeamSeasonSummaryApiResponse(BaseModel):
+    team: TeamResponse
+    season: str
+    conference: str | None
+    division: str | None
+    wins: int | None
+    losses: int | None
+    win_pct: float | None
+    conference_rank: int | None
+    division_rank: int | None
+    points_per_game: float | None
+    points_allowed_per_game: float | None
+    net_rating: float | None
+    offensive_rating: float | None
+    defensive_rating: float | None
+    pace: float | None
+    playoff_result: str | None
+    meta: ApiMetadata
+
+
+class RosterMemberResponse(BaseModel):
+    player: PlayerListItem
+    jersey_number: str | None
+    position: str | None
+    roster_status: str
+    is_projected_starter: bool
+    depth_order: int | None
+
+
+class TeamRosterResponse(BaseModel):
+    team: TeamResponse
+    members: list[RosterMemberResponse]
+    meta: ApiMetadata
+
+
+class TeamDetailResponse(BaseModel):
+    team: TeamResponse
+    summary: TeamSeasonSummaryApiResponse | None
+    meta: ApiMetadata
+
+
+class StandingRowResponse(BaseModel):
+    team: TeamResponse
+    conference: str
+    rank: int
+    wins: int
+    losses: int
+    win_pct: float
+    games_back: float | None
+    conference_record: str | None
+    division_record: str | None
+    home_record: str | None
+    away_record: str | None
+    last_10: str | None
+    streak: str | None
+
+
+class StandingsResponse(BaseModel):
+    standings: list[StandingRowResponse]
+    meta: ApiMetadata
 
 
 class DraftPickResponse(BaseModel):
@@ -182,6 +265,7 @@ class PlayerSeasonSummaryResponse(BaseModel):
     turnovers_per_36: float | None
     analytics_rebuilt_at: datetime | None
     analytics_warnings: list[dict[str, Any]]
+    meta: ApiMetadata | None = None
 
 
 class PlayerSeasonSummariesResponse(BaseModel):
@@ -231,6 +315,7 @@ class TrendsResponse(BaseModel):
     efficiency_trend: str | None
     efficiency_trend_value: float | None
     payload: dict[str, Any]
+    meta: ApiMetadata | None = None
 
 
 class SplitResponse(BaseModel):
@@ -248,6 +333,7 @@ class PlayerSplitsResponse(BaseModel):
     season: str
     home: SplitResponse | None
     away: SplitResponse | None
+    meta: ApiMetadata | None = None
 
 
 class BenchmarksResponse(BaseModel):
@@ -258,6 +344,16 @@ class BenchmarksResponse(BaseModel):
     position_percentiles: dict[str, Any]
     minutes_tier_percentiles: dict[str, Any]
     analytics_warnings: list[dict[str, Any]]
+    meta: ApiMetadata | None = None
+
+
+class SimilarFeatureComparison(BaseModel):
+    feature: str
+    label: str
+    unit: str
+    player_value: float | None
+    candidate_value: float | None
+    difference: float | None
 
 
 class SimilarPlayerResponse(BaseModel):
@@ -266,10 +362,22 @@ class SimilarPlayerResponse(BaseModel):
     similarity_score: float = Field(
         ge=0,
         le=100,
-        description="Higher score means the player's stored season-summary stats are more similar.",
+        description=(
+            "Cosine similarity of the standardized statistical feature vectors, mapped to 0-100. "
+            "Higher means a more similar statistical profile, not an identical play style."
+        ),
     )
     shared_position: bool
     minutes_difference: float | None
+    shared_strengths: list[str] = Field(
+        default_factory=list,
+        description="Features where both players rate well above league average.",
+    )
+    largest_differences: list[str] = Field(
+        default_factory=list,
+        description="Features where the two standardized profiles diverge the most.",
+    )
+    feature_comparisons: list[SimilarFeatureComparison] = Field(default_factory=list)
 
 
 class SimilarPlayersResponse(BaseModel):
@@ -277,6 +385,7 @@ class SimilarPlayersResponse(BaseModel):
     nba_player_id: int
     season: str
     players: list[SimilarPlayerResponse]
+    meta: ApiMetadata | None = None
 
 
 class RecentWindowResponse(BaseModel):
@@ -340,6 +449,7 @@ class CompareResponse(BaseModel):
     position_match: bool
     position_context: str
     category_winners: list[CompareMetricResponse]
+    meta: ApiMetadata | None = None
 
 
 class ReportSentenceResponse(BaseModel):
@@ -362,3 +472,4 @@ class PlayerReportResponse(BaseModel):
     benchmarks: BenchmarksResponse
     sample_size_warnings: list[dict[str, Any]]
     sections: list[ReportSectionResponse]
+    meta: ApiMetadata | None = None

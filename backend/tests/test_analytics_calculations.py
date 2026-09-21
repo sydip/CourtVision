@@ -173,6 +173,7 @@ def test_season_summary_uses_aggregate_true_shooting() -> None:
     assert summary.points_per_36 == pytest.approx(21.6)
     assert summary.rebounds_per_36 == pytest.approx(7.2)
     assert summary.assists_per_36 == pytest.approx(8.64)
+    assert summary.effective_field_goal_percentage == pytest.approx(10 / 15)
 
 
 def test_season_summary_aggregates_defense_and_shooting_rates() -> None:

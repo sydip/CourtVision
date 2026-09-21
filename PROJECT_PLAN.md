@@ -1,10 +1,10 @@
-# HoopsIQ Project Plan
+# CourtVision Project Plan
 
 Phase 0 status: complete.
 
 Date: 2026-06-25
 
-This phase audits the current workspace and defines the implementation plan for HoopsIQ. It does not implement product features, database models, API routes, ingestion jobs, analytics, or UI flows.
+This phase audits the current workspace and defines the implementation plan for CourtVision. It does not implement product features, database models, API routes, ingestion jobs, analytics, or UI flows.
 
 ## Current Workspace Audit
 
@@ -38,33 +38,33 @@ Top-level files observed:
 Frontend:
 
 - Existing: `Build4Good/index.html`, `Build4Good/styles.css`, vendored React bundles, and JavaScript under `Build4Good/js/`.
-- Missing for HoopsIQ: Next.js App Router, TypeScript, Tailwind CSS, Recharts, TanStack Query, Zod, Vitest, React Testing Library, and Playwright setup.
+- Missing for CourtVision: Next.js App Router, TypeScript, Tailwind CSS, Recharts, TanStack Query, Zod, Vitest, React Testing Library, and Playwright setup.
 
 Backend:
 
 - Existing: unrelated Python snapshot script under `Build4Good/scripts/fetch_neo_snapshot.py`.
-- Missing for HoopsIQ: FastAPI application, Pydantic schemas, settings module, structured logging, provider interfaces, ingestion jobs, and service layer.
+- Missing for CourtVision: FastAPI application, Pydantic schemas, settings module, structured logging, provider interfaces, ingestion jobs, and service layer.
 
 Database:
 
 - Existing: no PostgreSQL, SQLAlchemy, or Alembic configuration found.
-- Missing for HoopsIQ: database connection settings, SQLAlchemy models, Alembic migrations, uniqueness constraints, upsert helpers, raw response persistence, and `sync_runs`.
+- Missing for CourtVision: database connection settings, SQLAlchemy models, Alembic migrations, uniqueness constraints, upsert helpers, raw response persistence, and `sync_runs`.
 
 Testing:
 
 - Existing: `Build4Good/tests/test_snapshot_builder.py`, using Python `unittest` for the unrelated Quiet Skies project.
-- Missing for HoopsIQ: Pytest, Vitest, React Testing Library, Playwright, fixture data, test database setup, and offline provider tests.
+- Missing for CourtVision: Pytest, Vitest, React Testing Library, Playwright, fixture data, test database setup, and offline provider tests.
 
 Docker and CI:
 
-- Existing: no HoopsIQ Docker or CI configuration found.
-- Missing for HoopsIQ: Docker Compose, Dockerfiles, `.env.example`, GitHub Actions workflow, and local dev commands.
+- Existing: no CourtVision Docker or CI configuration found.
+- Missing for CourtVision: Docker Compose, Dockerfiles, `.env.example`, GitHub Actions workflow, and local dev commands.
 
 Repository hygiene:
 
 - Most visible workspace files are untracked.
 - No unrelated files were deleted during phase 0.
-- HoopsIQ phase 0 artifacts should be placed at `C:\Users\saide\.vscode\HoopsIQ`.
+- CourtVision phase 0 artifacts should be placed at `C:\Users\saide\.vscode\CourtVision`.
 
 ## Missing Dependencies And Configuration
 
@@ -119,7 +119,7 @@ Configuration to add in later phases:
 ## Proposed Final Repository Structure
 
 ```text
-HoopsIQ/
+CourtVision/
 |-- PROJECT_PLAN.md
 |-- DECISIONS.md
 |-- README.md
@@ -139,7 +139,7 @@ HoopsIQ/
 |   |   `-- playwright/
 |   `-- api/
 |       `-- Dockerfile
-|-- hoopsiq/
+|-- courtvision/
 |   |-- api/
 |   |   `-- routes/
 |   |-- analytics/
@@ -185,7 +185,7 @@ This structure separates frontend, backend API, data ingestion, analytics, persi
 
 ### Phase 1: Repository And Docker Setup
 
-- [ ] Create the HoopsIQ project scaffold.
+- [ ] Create the CourtVision project scaffold.
 - [ ] Add root README, `.gitignore`, and `.env.example`.
 - [ ] Scaffold Next.js App Router with TypeScript.
 - [ ] Scaffold FastAPI with Python 3.11.
@@ -305,5 +305,5 @@ No tests were executed. Phase 0 is documentation and planning only.
 ## Recommended Git Commit Message
 
 ```text
-docs: add HoopsIQ phase 0 plan
+docs: add CourtVision phase 0 plan
 ```

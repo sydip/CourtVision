@@ -16,7 +16,8 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { getGraphStroke, getTeamTheme, getThemeStyle } from "@/components/player-profile";
 import { PlayerNumberMark } from "@/components/player-number-mark";
-import { getAllPlayers, getDataStatus, getSeasons } from "@/lib/api/hoopsiq";
+import { getAllPlayers } from "@/lib/api/courtvision";
+import { useSeason } from "@/lib/state/season-context";
 import { useCompare, usePlayerGames } from "@/lib/api/hooks";
 import type {
   CompareMetric,
@@ -100,7 +101,7 @@ const POPULAR_PAIRS: [string, string][] = [
   ["Cooper Flagg", "Kon Knueppel"],
 ];
 
-const RECENT_KEY = "hoopsiq:recent-compares";
+const RECENT_KEY = "courtvision:recent-compares";
 
 function Ico({ children }: { children: ReactNode }) {
   return (
@@ -176,9 +177,8 @@ const BENEFITS: { body: string; icon: ReactNode; title: string }[] = [
 ];
 
 export function CompareDashboard() {
+  const { season: selectedSeason, seasons, setSeason: setSelectedSeason } = useSeason();
   const [players, setPlayers] = useState<PlayerListItem[]>([]);
-  const [seasons, setSeasons] = useState<string[]>(["2025-26"]);
-  const [selectedSeason, setSelectedSeason] = useState("2025-26");
   const [statType, setStatType] = useState<(typeof STAT_TYPES)[number]>("Per Game");
   const [minGames, setMinGames] = useState<(typeof MIN_GAMES_OPTIONS)[number]>("10");
   const [playerA, setPlayerA] = useState<PlayerListItem | null>(null);
@@ -195,15 +195,12 @@ export function CompareDashboard() {
     setIsInitialLoading(true);
     setHasInitialError(false);
 
-    Promise.all([getAllPlayers(), getDataStatus(), getSeasons()])
-      .then(([allPlayers, status, seasonsResponse]) => {
+    getAllPlayers(selectedSeason)
+      .then((allPlayers) => {
         if (!isActive) {
           return;
         }
         setPlayers(allPlayers.filter((player) => player.active));
-        const nextSeason = status.current_season || seasonsResponse.seasons[0] || "2025-26";
-        setSeasons(seasonsResponse.seasons.length > 0 ? seasonsResponse.seasons : [nextSeason]);
-        setSelectedSeason(nextSeason);
       })
       .catch(() => {
         if (isActive) {
@@ -219,7 +216,7 @@ export function CompareDashboard() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [selectedSeason]);
 
   useEffect(() => {
     setRecent(loadRecent());

@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { TeamLogoMark, getTeamTheme, getTeamThemeStyle } from "@/components/rosters-dashboard";
-import { getPlayoffRound, getTeams } from "@/lib/api/hoopsiq";
+import { getPlayoffRound, getTeams } from "@/lib/api/courtvision";
 import type { PlayoffRoundResponse, Team } from "@/lib/api/schemas";
+import { useSeason } from "@/lib/state/season-context";
 import { mergeStoredFirstRound } from "@/lib/playoff-boxscore-merge";
 import {
   championId,
@@ -28,6 +29,7 @@ import {
 type Side = "west" | "east";
 
 export function PlayoffsBracket() {
+  const { season } = useSeason();
   const [teams, setTeams] = useState<Team[]>([]);
   const [firstRoundData, setFirstRoundData] = useState<PlayoffRoundResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +42,7 @@ export function PlayoffsBracket() {
     setIsLoading(true);
     setHasError(false);
 
-    Promise.all([getTeams(), getPlayoffRound()])
+    Promise.all([getTeams(season), getPlayoffRound(season)])
       .then(([teamsResponse, playoffResponse]) => {
         if (isActive) {
           setTeams(teamsResponse.teams);
@@ -61,7 +63,7 @@ export function PlayoffsBracket() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [season]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -100,7 +102,7 @@ export function PlayoffsBracket() {
         <header className="playoffs-header">
           <div>
             <h1>NBA Playoffs</h1>
-            <p>2026 Postseason Results</p>
+            <p>{season} Postseason Results</p>
           </div>
           <span className="playoffs-subnote">
             {firstRoundData

@@ -56,11 +56,11 @@ app/repositories/players.py
 app/repositories/stats.py
 app/services/__init__.py
 app/services/data_status.py
-hoopsiq_backend.egg-info/PKG-INFO
-hoopsiq_backend.egg-info/SOURCES.txt
-hoopsiq_backend.egg-info/dependency_links.txt
-hoopsiq_backend.egg-info/requires.txt
-hoopsiq_backend.egg-info/top_level.txt
+courtvision_backend.egg-info/PKG-INFO
+courtvision_backend.egg-info/SOURCES.txt
+courtvision_backend.egg-info/dependency_links.txt
+courtvision_backend.egg-info/requires.txt
+courtvision_backend.egg-info/top_level.txt
 tests/test_analytics_calculations.py
 tests/test_application_api.py
 tests/test_assistant_api.py

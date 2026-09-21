@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 
 from alembic import command
 from app.core.config import get_settings
@@ -30,7 +30,15 @@ def test_initial_migration_upgrades_and_downgrades_clean_database(
 
     engine = create_engine(normalize_database_url(sqlite_database_url))
     try:
-        tables = set(inspect(engine).get_table_names())
+        inspector = inspect(engine)
+        tables = set(inspector.get_table_names())
+        team_season_columns = {
+            column["name"] for column in inspector.get_columns("team_season_stats")
+        }
+        with engine.connect() as connection:
+            seasons = connection.execute(
+                text("SELECT slug, supports_predictions FROM seasons ORDER BY start_year")
+            ).all()
     finally:
         engine.dispose()
 
@@ -46,7 +54,29 @@ def test_initial_migration_upgrades_and_downgrades_clean_database(
         "playoff_games",
         "playoff_team_box_scores",
         "playoff_player_box_scores",
+        "seasons",
+        "standings_snapshots",
+        "roster_memberships",
+        "prediction_runs",
+        "prediction_results",
+        "team_game_stats",
     }.issubset(tables)
+    assert {
+        "conference",
+        "division",
+        "win_pct",
+        "points_per_game",
+        "points_allowed_per_game",
+    }.issubset(team_season_columns)
+    assert [row[0] for row in seasons] == [
+        "2021-22",
+        "2022-23",
+        "2023-24",
+        "2024-25",
+        "2025-26",
+        "2026-27",
+    ]
+    assert bool(seasons[-1][1]) is True
 
     command.downgrade(config, "base")
 

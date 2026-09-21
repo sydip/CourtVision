@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+JORDAN_PREDICTION_SEASON = "2025-26"
+JORDAN_PREDICTION_DISCLAIMER = (
+    "Experimental Jordan model estimate, not a guaranteed outcome or betting recommendation."
+)
+
 
 @dataclass(frozen=True)
 class PlayerProjectionFeatures:
@@ -98,6 +103,7 @@ class AwardPredictionResult:
     candidates: list[RankedCandidate]
     warnings: list[str]
     methodology: str
+    disclaimer: str
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -109,6 +115,7 @@ class AwardPredictionResult:
             "candidates": [candidate.as_dict() for candidate in self.candidates],
             "warnings": self.warnings,
             "methodology": self.methodology,
+            "disclaimer": self.disclaimer,
         }
 
 
@@ -143,6 +150,7 @@ class StandingsPredictionResult:
     teams: list[ProjectedTeam]
     warnings: list[str]
     methodology: str
+    disclaimer: str
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -154,4 +162,5 @@ class StandingsPredictionResult:
             "teams": [team.as_dict() for team in self.teams],
             "warnings": self.warnings,
             "methodology": self.methodology,
+            "disclaimer": self.disclaimer,
         }

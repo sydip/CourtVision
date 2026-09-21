@@ -10,6 +10,12 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.assistant.guardrails import (
+    JORDAN_PREDICTION_DISCLAIMER,
+    JORDAN_PREDICTION_SEASON,
+    is_betting_request,
+    is_prediction_request,
+)
 from app.assistant.system_prompt import SYSTEM_PROMPT
 from app.assistant.tools import (
     compare_players,
@@ -133,6 +139,25 @@ def answer_message(
     session_id: str | None = None,
 ) -> dict[str, Any]:
     context = _context(session_id)
+    if is_betting_request(message):
+        return _response_payload(
+            "CourtVision does not provide betting advice.",
+            context,
+            [],
+            "betting-guard",
+        )
+    requested_season = _extract_season(message)
+    if _is_prediction_message(message) and requested_season not in (
+        None,
+        JORDAN_PREDICTION_SEASON,
+    ):
+        return _response_payload(
+            "Jordan prediction mode is only available for the 2025-26 season. "
+            "Use the CourtVision prediction service for 2026-27 model estimates.",
+            context,
+            [],
+            "jordan-season-guard",
+        )
     settings = get_settings()
     if settings.anthropic_api_key:
         try:
@@ -179,6 +204,15 @@ def _answer_with_claude(
             ).strip()
             if not text:
                 raise RuntimeError("Claude returned no grounded response.")
+            prediction_sources = [
+                source for source in sources if str(source.get("tool", "")).startswith("predict_")
+            ]
+            if is_prediction_request(message) and not prediction_sources:
+                raise RuntimeError(
+                    "A prediction answer requires a supported prediction tool result."
+                )
+            if prediction_sources and JORDAN_PREDICTION_DISCLAIMER not in text:
+                text = f"{text} {JORDAN_PREDICTION_DISCLAIMER}"
             return _response_payload(text, context, sources, "claude-tools")
         messages.append({"role": "assistant", "content": blocks})
         results: list[dict[str, Any]] = []
@@ -207,7 +241,7 @@ def _answer_locally(
     normalized = message.strip()
     lowered = normalized.lower()
     explicit_season = _extract_season(normalized)
-    season = explicit_season or "2025-26"
+    season = explicit_season or JORDAN_PREDICTION_SEASON
     if any(phrase in lowered for phrase in ("what can you do", "help", "capabilities")):
         result = list_capabilities(session)
         text = (
@@ -224,8 +258,6 @@ def _answer_locally(
         )
 
     award = _award_from_message(lowered)
-    if award == "ROY" and explicit_season is None:
-        season = "2026-27"
     if award and any(word in lowered for word in ("predict", "favorite", "likely", "projection")):
         result = predict_award(session, award, season, limit=5)
         candidates = result["candidates"]
@@ -235,8 +267,7 @@ def _answer_locally(
             leader = candidates[0]
             drivers = leader["feature_attributions"][:3]
             why = ", ".join(
-                f"{driver['feature'].replace('_', ' ')} {driver['raw_value']}"
-                for driver in drivers
+                f"{driver['feature'].replace('_', ' ')} {driver['raw_value']}" for driver in drivers
             )
             text = (
                 f"{leader['name']} is the model's {award.replace('_', ' ')} favorite for "
@@ -244,6 +275,7 @@ def _answer_locally(
                 f"driven most by {why}. "
                 f"The projection uses stored {result['source_season']} data."
             )
+        text = f"{text} {JORDAN_PREDICTION_DISCLAIMER}"
         return _response_payload(
             text,
             context,
@@ -252,7 +284,7 @@ def _answer_locally(
             result,
         )
 
-    if "standing" in lowered or "conference" in lowered:
+    if ("standing" in lowered or "conference" in lowered) and _is_prediction_message(message):
         conference = "West" if "west" in lowered else "East" if "east" in lowered else None
         result = predict_league_standings(session, season, conference)
         leaders = result["teams"][:5]
@@ -263,7 +295,8 @@ def _answer_locally(
                 for team in leaders
             )
             + ". These are deterministic estimates from stored roster production, efficiency, "
-            "plus-minus, continuity, and available health context."
+            "plus-minus, continuity, and available health context. "
+            f"{JORDAN_PREDICTION_DISCLAIMER}"
         )
         return _response_payload(
             text,
@@ -490,6 +523,11 @@ def _award_from_message(message: str) -> str | None:
         if phrase in message:
             return award
     return None
+
+
+def _is_prediction_message(message: str) -> bool:
+    value = message.casefold()
+    return is_prediction_request(message) or any(word in value for word in ("favorite", "likely"))
 
 
 def _display(summary: dict[str, Any] | None, key: str) -> str:

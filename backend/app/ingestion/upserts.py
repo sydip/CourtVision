@@ -15,7 +15,18 @@ from app.data.normalization import (
     PlayerSeasonSummaryRecord,
     TeamRecord,
 )
-from app.models import Game, Player, PlayerGameStat, PlayerSeasonSummary, Team
+from app.data.source_schemas import SourceRosterMembership, SourceStanding, SourceTeamGameLog
+from app.models import (
+    Game,
+    Player,
+    PlayerGameStat,
+    PlayerSeasonSummary,
+    RosterMembership,
+    StandingsSnapshot,
+    Team,
+    TeamGameStat,
+    TeamSeasonSummary,
+)
 
 UpsertOutcome = Literal["inserted", "updated", "unchanged"]
 
@@ -206,6 +217,108 @@ def upsert_player_season_summary(
         session.flush()
         return "updated"
     return "unchanged"
+
+
+def upsert_team_game_stat(session: Session, record: SourceTeamGameLog) -> UpsertOutcome:
+    team_id = _required_team_id_for_nba_id(session, record.nba_team_id)
+    game = session.scalar(select(Game).where(Game.nba_game_id == record.nba_game_id))
+    if game is None:
+        raise RecordRejectedError(f"unknown game nba_game_id={record.nba_game_id}")
+    row = session.scalar(
+        select(TeamGameStat).where(TeamGameStat.team_id == team_id, TeamGameStat.game_id == game.id)
+    )
+    values = record.model_dump(exclude={"nba_team_id", "nba_game_id"})
+    values["source"] = "nba_api"
+    if row is None:
+        session.add(TeamGameStat(team_id=team_id, game_id=game.id, **values))
+        session.flush()
+        return "inserted"
+    if _apply_changes(row, values):
+        session.flush()
+        return "updated"
+    return "unchanged"
+
+
+def upsert_standing(session: Session, record: SourceStanding) -> UpsertOutcome:
+    team_id = _required_team_id_for_nba_id(session, record.nba_team_id)
+    conference = _normalize_conference(record.conference)
+    row = session.scalar(
+        select(StandingsSnapshot).where(
+            StandingsSnapshot.season == record.season,
+            StandingsSnapshot.snapshot_type == "final_regular_season",
+            StandingsSnapshot.team_id == team_id,
+        )
+    )
+    values = {
+        "conference": conference,
+        "rank": record.rank,
+        "wins": record.wins,
+        "losses": record.losses,
+        "win_pct": record.win_pct,
+        "source": record.source,
+    }
+    if row is None:
+        session.add(
+            StandingsSnapshot(
+                team_id=team_id,
+                season=record.season,
+                snapshot_type="final_regular_season",
+                **values,
+            )
+        )
+        outcome: UpsertOutcome = "inserted"
+    else:
+        outcome = "updated" if _apply_changes(row, values) else "unchanged"
+    summary = session.scalar(
+        select(TeamSeasonSummary).where(
+            TeamSeasonSummary.team_id == team_id, TeamSeasonSummary.season == record.season
+        )
+    )
+    summary_values = {**values, "data_source": record.source}
+    summary_values.pop("rank")
+    summary_values.pop("source")
+    summary_values["conference_rank"] = record.rank
+    if summary is None:
+        session.add(TeamSeasonSummary(team_id=team_id, season=record.season, **summary_values))
+    else:
+        _apply_changes(summary, summary_values)
+    session.flush()
+    return outcome
+
+
+def upsert_roster_membership(session: Session, record: SourceRosterMembership) -> UpsertOutcome:
+    player = session.scalar(select(Player).where(Player.nba_player_id == record.nba_player_id))
+    if player is None:
+        raise RecordRejectedError(f"unknown player nba_player_id={record.nba_player_id}")
+    team_id = _required_team_id_for_nba_id(session, record.nba_team_id)
+    row = session.scalar(
+        select(RosterMembership).where(
+            RosterMembership.player_id == player.id,
+            RosterMembership.team_id == team_id,
+            RosterMembership.season == record.season,
+            RosterMembership.start_date.is_(None),
+        )
+    )
+    values = record.model_dump(exclude={"nba_player_id", "nba_team_id", "season"})
+    if row is None:
+        session.add(
+            RosterMembership(player_id=player.id, team_id=team_id, season=record.season, **values)
+        )
+        session.flush()
+        return "inserted"
+    if _apply_changes(row, values):
+        session.flush()
+        return "updated"
+    return "unchanged"
+
+
+def _normalize_conference(value: str) -> str:
+    normalized = value.strip().lower()
+    if normalized in {"east", "eastern"}:
+        return "East"
+    if normalized in {"west", "western"}:
+        return "West"
+    raise RecordRejectedError(f"unsupported conference={value}")
 
 
 def _team_id_for_nba_id(session: Session, nba_team_id: int | None) -> int | None:

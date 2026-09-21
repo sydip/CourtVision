@@ -85,3 +85,34 @@ class SourceLeaguePlayerStatistic(SourceBaseModel):
     assists_per_game: Decimal | None = None
     true_shooting_percentage: Decimal | None = None
     usage_rate: Decimal | None = None
+
+
+class SourceTeamGameLog(SourceBaseModel):
+    nba_team_id: int
+    nba_game_id: str
+    season: str
+    is_home: bool
+    points: int
+    opponent_points: int
+    result: str
+
+
+class SourceStanding(SourceBaseModel):
+    nba_team_id: int
+    season: str
+    conference: str
+    rank: int
+    wins: int
+    losses: int
+    win_pct: Decimal
+    source: str = "nba_api"
+
+
+class SourceRosterMembership(SourceBaseModel):
+    nba_player_id: int
+    nba_team_id: int
+    season: str
+    jersey_number: str | None = None
+    position: str | None = None
+    roster_status: str = "active"
+    source: str = "nba_api"

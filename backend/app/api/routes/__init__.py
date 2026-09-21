@@ -1,1 +1,1 @@
-"""Route modules for HoopsIQ."""
+"""Route modules for CourtVision."""

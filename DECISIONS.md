@@ -1,19 +1,19 @@
-# HoopsIQ Decisions
+# CourtVision Decisions
 
 This document records architecture decisions for phase 0. It should guide later phases without implying that product behavior has been implemented.
 
 ## Architecture Decisions
 
-1. HoopsIQ will use a monorepo-style project structure rooted at `HoopsIQ/`.
+1. CourtVision will use a monorepo-style project structure rooted at `CourtVision/`.
 2. `apps/web` will own the Next.js App Router frontend.
-3. `hoopsiq/api` will own FastAPI route registration and API boundary logic.
-4. `hoopsiq/providers` will own basketball data provider contracts and implementations.
-5. `hoopsiq/ingestion` will own batch sync orchestration, raw-response capture, validation, and normalization.
-6. `hoopsiq/persistence` will own SQLAlchemy models, sessions, and database configuration.
-7. `hoopsiq/repositories` will own database reads, writes, and upserts.
-8. `hoopsiq/analytics` will own season summaries, rolling averages, TS%, splits, benchmarks, and trends.
-9. `hoopsiq/reports` will own deterministic report generation once created.
-10. `hoopsiq/similarity` will own statistical player similarity once created.
+3. `courtvision/api` will own FastAPI route registration and API boundary logic.
+4. `courtvision/providers` will own basketball data provider contracts and implementations.
+5. `courtvision/ingestion` will own batch sync orchestration, raw-response capture, validation, and normalization.
+6. `courtvision/persistence` will own SQLAlchemy models, sessions, and database configuration.
+7. `courtvision/repositories` will own database reads, writes, and upserts.
+8. `courtvision/analytics` will own season summaries, rolling averages, TS%, splits, benchmarks, and trends.
+9. `courtvision/reports` will own deterministic report generation once created.
+10. `courtvision/similarity` will own statistical player similarity once created.
 11. PostgreSQL is the source of truth for normal API and page requests.
 12. External NBA data access is allowed only in batch ingestion jobs.
 13. The MVP must not use an LLM for report generation.
@@ -97,7 +97,7 @@ Database:
 
 Environment:
 
-- Application-specific variables use the `HOOPSIQ_` prefix.
+- Application-specific variables use the `COURTVISION_` prefix.
 - `.env.example` uses safe placeholder values.
 - Real credentials are not committed.
 

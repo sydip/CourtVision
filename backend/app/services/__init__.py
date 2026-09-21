@@ -1,1 +1,1 @@
-"""Application service helpers for HoopsIQ."""
+"""Application service helpers for CourtVision."""

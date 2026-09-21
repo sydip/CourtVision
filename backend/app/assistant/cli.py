@@ -7,7 +7,7 @@ from app.db.session import create_session_factory
 def main() -> None:
     session_factory = create_session_factory()
     session_id: str | None = None
-    print("Jordan - HoopsIQ NBA Intelligence Assistant")
+    print("Jordan - CourtVision NBA Intelligence Assistant")
     print("Grounded in stored data. Type 'exit' to quit.")
     while True:
         try:

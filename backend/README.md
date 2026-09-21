@@ -1,4 +1,4 @@
-# HoopsIQ Backend
+# CourtVision Backend
 
 ## Database Initialization
 
@@ -29,7 +29,7 @@ python -m alembic downgrade base
 The default `DATABASE_URL` is:
 
 ```text
-postgresql://hoopsiq:hoopsiq_dev_password@localhost:5432/hoopsiq
+postgresql://courtvision:courtvision_dev_password@localhost:5432/courtvision
 ```
 
 The app normalizes that URL to SQLAlchemy's `postgresql+psycopg://` driver form at runtime. Tests use an isolated temporary SQLite database by default, while Alembic and the application target PostgreSQL for local development.
@@ -62,7 +62,7 @@ python -m app.ingestion.cli fixtures --season 2025-26
 To test with a disposable SQLite database:
 
 ```powershell
-python -m app.ingestion.cli fixtures --season 2025-26 --database-url sqlite:///./hoopsiq_fixture_check.db --init-schema
+python -m app.ingestion.cli fixtures --season 2025-26 --database-url sqlite:///./courtvision_fixture_check.db --init-schema
 ```
 
 The fixture command:

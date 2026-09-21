@@ -13,7 +13,15 @@ class RawResponseCache:
     def __init__(self, root_dir: Path | str) -> None:
         self.root_dir = Path(root_dir)
 
-    def save(self, season: str, endpoint: str, payload: JsonPayload) -> Path:
+    def save(
+        self,
+        season: str,
+        endpoint: str,
+        payload: JsonPayload,
+        *,
+        query_parameters: dict[str, object] | None = None,
+        source: str = "nba_api",
+    ) -> Path:
         endpoint_dir = self._endpoint_dir(season, endpoint)
         endpoint_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
@@ -22,7 +30,15 @@ class RawResponseCache:
         while cache_path.exists():
             cache_path = endpoint_dir / f"{timestamp}-{suffix}.json"
             suffix += 1
-        cache_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        envelope = {
+            "endpoint": endpoint,
+            "source": source,
+            "season": season,
+            "fetched_at": datetime.now(UTC).isoformat(),
+            "query_parameters": query_parameters or {},
+            "raw_payload": payload,
+        }
+        cache_path.write_text(json.dumps(envelope, indent=2, sort_keys=True), encoding="utf-8")
         return cache_path
 
     def load_latest(self, season: str, endpoint: str) -> JsonPayload | None:
@@ -32,7 +48,10 @@ class RawResponseCache:
         cache_files = sorted(endpoint_dir.glob("*.json"), reverse=True)
         if not cache_files:
             return None
-        return cast(JsonPayload, json.loads(cache_files[0].read_text(encoding="utf-8")))
+        cached = json.loads(cache_files[0].read_text(encoding="utf-8"))
+        if isinstance(cached, dict) and "raw_payload" in cached:
+            return cast(JsonPayload, cached["raw_payload"])
+        return cast(JsonPayload, cached)
 
     def latest_path(self, season: str, endpoint: str) -> Path | None:
         endpoint_dir = self._endpoint_dir(season, endpoint)

@@ -8,6 +8,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.analytics.awards_predictor import SUPPORTED_AWARDS, predict_awards
 from app.analytics.standings_predictor import predict_standings
+from app.assistant.guardrails import (
+    JORDAN_PREDICTION_DISCLAIMER,
+    JORDAN_PREDICTION_SEASON,
+    require_jordan_prediction_season,
+)
 from app.models import (
     AwardHistory,
     Player,
@@ -39,7 +44,7 @@ def list_capabilities(session: Session) -> dict[str, Any]:
         "available_seasons": seasons,
         "supported_awards": sorted(SUPPORTED_AWARDS),
         "grounding": (
-            "Answers use only stored HoopsIQ records or deterministic predictions "
+            "Answers use only stored CourtVision records or deterministic predictions "
             "computed from those records."
         ),
     }
@@ -180,7 +185,11 @@ def predict_award(
     season: str,
     limit: int = 10,
 ) -> dict[str, Any]:
-    return predict_awards(session, season, award_type, limit=limit).as_dict()
+    require_jordan_prediction_season(season)
+    return {
+        **predict_awards(session, season, award_type, limit=limit).as_dict(),
+        "disclaimer": JORDAN_PREDICTION_DISCLAIMER,
+    }
 
 
 def predict_league_standings(
@@ -188,14 +197,22 @@ def predict_league_standings(
     season: str,
     conference: str | None = None,
 ) -> dict[str, Any]:
-    return predict_standings(session, season, conference).as_dict()
+    require_jordan_prediction_season(season)
+    return {
+        **predict_standings(session, season, conference).as_dict(),
+        "disclaimer": JORDAN_PREDICTION_DISCLAIMER,
+    }
 
 
 def list_predictions(session: Session, limit: int = 20) -> dict[str, Any]:
     rows = session.scalars(
-        select(Prediction).order_by(Prediction.created_at.desc()).limit(limit)
+        select(Prediction)
+        .where(Prediction.target_season == JORDAN_PREDICTION_SEASON)
+        .order_by(Prediction.created_at.desc())
+        .limit(limit)
     ).all()
     return {
+        "disclaimer": JORDAN_PREDICTION_DISCLAIMER,
         "predictions": [
             {
                 "id": prediction.id,

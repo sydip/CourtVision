@@ -11,8 +11,9 @@ import {
   getTeamTheme,
   getTeamThemeStyle,
 } from "@/components/rosters-dashboard";
-import { getDataStatus, getTeams } from "@/lib/api/hoopsiq";
-import type { Team } from "@/lib/api/schemas";
+import { getStandings, getTeams } from "@/lib/api/courtvision";
+import type { StandingsResponse, Team } from "@/lib/api/schemas";
+import { useSeason } from "@/lib/state/season-context";
 
 type Conference = "East" | "West";
 type ConferenceFilter = "all" | Conference;
@@ -52,7 +53,21 @@ type StandingRow = {
   streakLen: number;
   confRank: number;
   clinch: "x" | "pi" | "o" | "";
+  /* Display strings for the split columns. Kept separate from the numeric
+     fields (which drive sorting) so a split the database has no record for
+     shows an em dash instead of an invented 0-0. */
+  confRec: string;
+  divRec: string;
+  homeRec: string;
+  awayRec: string;
+  l10Rec: string;
 };
+
+const NO_RECORD = "—";
+
+function displayRecord(value: string | null | undefined) {
+  return value && value.trim() ? value : NO_RECORD;
+}
 
 type StandingsGroup = {
   key: string;
@@ -121,7 +136,8 @@ const columns: Array<{ key: Exclude<SortKey, "rank">; label: string; title: stri
 
 export function StandingsDashboard() {
   const [teams, setTeams] = useState<Team[]>([]);
-  const [season, setSeason] = useState("2025-26");
+  const [storedStandings, setStoredStandings] = useState<StandingsResponse["standings"]>([]);
+  const { season } = useSeason();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [view, setView] = useState<StandingsView>("league");
@@ -134,15 +150,13 @@ export function StandingsDashboard() {
     setIsLoading(true);
     setHasError(false);
 
-    Promise.all([getTeams(), getDataStatus().catch(() => undefined)])
-      .then(([teamsResponse, statusResponse]) => {
+    Promise.all([getTeams(season), getStandings(season)])
+      .then(([teamsResponse, standingsResponse]) => {
         if (!isActive) {
           return;
         }
         setTeams(teamsResponse.teams);
-        if (statusResponse?.current_season) {
-          setSeason(statusResponse.current_season);
-        }
+        setStoredStandings(standingsResponse.standings);
       })
       .catch(() => {
         if (isActive) {
@@ -158,9 +172,13 @@ export function StandingsDashboard() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [season]);
 
-  const { east, west, all } = useMemo(() => buildStandings(teams), [teams]);
+  const { east, west, all } = useMemo(
+    () =>
+      storedStandings.length > 0 ? buildStoredStandings(storedStandings) : buildStandings(teams),
+    [storedStandings, teams],
+  );
 
   const groups = useMemo(
     () => buildGroups(view, conferenceFilter, east, west, all),
@@ -329,11 +347,11 @@ function StandingsSection({
                   <td className="col-stat">{row.losses}</td>
                   <td className="col-stat">{formatPct(row.pct)}</td>
                   <td className="col-stat muted">{gb === 0 ? "—" : gb.toFixed(1)}</td>
-                  <td className="col-stat">{`${row.confW}-${row.confL}`}</td>
-                  <td className="col-stat">{`${row.divW}-${row.divL}`}</td>
-                  <td className="col-stat">{`${row.homeW}-${row.homeL}`}</td>
-                  <td className="col-stat">{`${row.awayW}-${row.awayL}`}</td>
-                  <td className="col-stat">{`${row.l10W}-${row.l10L}`}</td>
+                  <td className="col-stat">{row.confRec}</td>
+                  <td className="col-stat">{row.divRec}</td>
+                  <td className="col-stat">{row.homeRec}</td>
+                  <td className="col-stat">{row.awayRec}</td>
+                  <td className="col-stat">{row.l10Rec}</td>
                   <td className="col-stat">
                     <span className={row.streakChar === "W" ? "streak win" : "streak loss"}>
                       {row.streakChar}
@@ -354,6 +372,56 @@ const HOME_GAMES = 41;
 const AWAY_GAMES = 41;
 const CONF_GAMES = 52;
 const DIV_GAMES = 16;
+
+function buildStoredStandings(rows: StandingsResponse["standings"]): {
+  east: StandingRow[];
+  west: StandingRow[];
+  all: StandingRow[];
+} {
+  const mapped = rows.map((row) => {
+    const conference = row.conference.toLowerCase().startsWith("east") ? "East" : "West";
+    const parseRecord = (value: string | null) => {
+      const [wins = "0", losses = "0"] = (value ?? "0-0").split("-");
+      return [Number(wins), Number(losses)] as const;
+    };
+    const [confW, confL] = parseRecord(row.conference_record);
+    const [divW, divL] = parseRecord(row.division_record);
+    const [homeW, homeL] = parseRecord(row.home_record);
+    const [awayW, awayL] = parseRecord(row.away_record);
+    const [l10W, l10L] = parseRecord(row.last_10);
+    const streak = row.streak?.match(/^([WL])(\d+)$/);
+    return {
+      team: row.team,
+      conference,
+      division: row.team.division ?? "",
+      wins: row.wins,
+      losses: row.losses,
+      pct: row.win_pct,
+      confW,
+      confL,
+      divW,
+      divL,
+      homeW,
+      homeL,
+      awayW,
+      awayL,
+      l10W,
+      l10L,
+      confRec: displayRecord(row.conference_record),
+      divRec: displayRecord(row.division_record),
+      homeRec: displayRecord(row.home_record),
+      awayRec: displayRecord(row.away_record),
+      l10Rec: displayRecord(row.last_10),
+      streakChar: (streak?.[1] as "W" | "L") ?? "W",
+      streakLen: Number(streak?.[2] ?? 0),
+      confRank: row.rank,
+      clinch: "" as const,
+    } satisfies StandingRow;
+  });
+  const east = mapped.filter((row) => row.conference === "East");
+  const west = mapped.filter((row) => row.conference === "West");
+  return { east, west, all: [...east, ...west] };
+}
 
 function buildStandings(teams: Team[]): {
   east: StandingRow[];
@@ -426,6 +494,12 @@ function buildRow(team: Team, wins: number, confRank: number): StandingRow {
     awayL: AWAY_GAMES - awayW,
     l10W,
     l10L: 10 - l10W,
+    // This branch derives every split itself, so each one always has a value.
+    confRec: `${confW}-${CONF_GAMES - confW}`,
+    divRec: `${divW}-${DIV_GAMES - divW}`,
+    homeRec: `${homeW}-${HOME_GAMES - homeW}`,
+    awayRec: `${awayW}-${AWAY_GAMES - awayW}`,
+    l10Rec: `${l10W}-${10 - l10W}`,
     streakChar,
     streakLen,
     confRank,

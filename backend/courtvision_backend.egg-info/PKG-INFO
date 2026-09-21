@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
-Name: hoopsiq-backend
+Name: courtvision-backend
 Version: 0.1.0
-Summary: FastAPI backend foundation for HoopsIQ
+Summary: FastAPI backend foundation for CourtVision
 Requires-Python: >=3.11
 Requires-Dist: alembic>=1.13
 Requires-Dist: anthropic>=0.40

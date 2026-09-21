@@ -27,7 +27,7 @@ const dataStatus: DataStatus = {
 };
 
 describe("HomeDashboardView", () => {
-  it("renders the welcome dashboard with the hero icon and primary actions", () => {
+  it("renders the hero, the database row and the category row", () => {
     const { container } = render(
       <HomeDashboardView
         dataStatus={dataStatus}
@@ -37,11 +37,31 @@ describe("HomeDashboardView", () => {
     );
 
     expect(container.querySelector(".basketball-icon")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Welcome to CourtVision/i })).toBeInTheDocument();
-    expect(screen.getByText("Your all-in-one NBA analytics platform.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /View Standings/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Compare Players/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /View Rosters/i })).toHaveAttribute("href", "/rosters");
+    expect(
+      screen.getByRole("heading", { name: /Explore\. Analyze\. Elevate\./i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Your all-in-one NBA database for in-depth research and analysis."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Explore Players/i })).toHaveAttribute(
+      "href",
+      "/players",
+    );
+
+    expect(screen.getByRole("heading", { name: "Explore the Database" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Browse by Category" })).toBeInTheDocument();
+    expect(container.querySelectorAll(".home-database-card")).toHaveLength(6);
+    expect(container.querySelectorAll(".home-category-card")).toHaveLength(4);
+    expect(container.querySelector(".dashboard-shell")).toHaveClass("topbar-shell");
+    expect(container.querySelector(".sidebar")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Section navigation" })).toBeInTheDocument();
+
+    // Every card must resolve to a section that actually exists.
+    for (const card of Array.from(container.querySelectorAll<HTMLAnchorElement>("a[href]"))) {
+      expect(card.getAttribute("href")).not.toBe("/offseason");
+    }
+
+    // The hero keeps surfacing live database status.
     expect(screen.getByText(/4 stored players/i)).toBeInTheDocument();
   });
 

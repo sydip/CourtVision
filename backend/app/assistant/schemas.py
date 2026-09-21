@@ -29,6 +29,26 @@ class AssistantChatResponse(BaseModel):
     data: dict[str, Any] | None = None
 
 
+class AssistantQueryContext(BaseModel):
+    currentPage: str | None = Field(default=None, max_length=80)
+    playerId: int | None = None
+    teamId: int | None = None
+
+
+class AssistantQueryRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    season: str | None = Field(default=None, pattern=r"^20\d{2}-\d{2}$")
+    context: AssistantQueryContext | None = None
+
+
+class AssistantQueryResponse(BaseModel):
+    answer: str
+    intent: str
+    season: str
+    evidence: list[dict[str, Any]]
+    requiresClarification: bool
+
+
 class PredictionLogItemResponse(BaseModel):
     id: int
     created_at: str
@@ -40,4 +60,5 @@ class PredictionLogItemResponse(BaseModel):
 
 
 class PredictionLogResponse(BaseModel):
+    disclaimer: str
     predictions: list[PredictionLogItemResponse]

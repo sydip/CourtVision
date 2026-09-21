@@ -21,7 +21,7 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getAllPlayers: getAllPlayersMock,
   getDataStatus: getDataStatusMock,
   getPlayers: getPlayersMock,

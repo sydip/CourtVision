@@ -4,9 +4,9 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DraftDashboard } from "@/components/draft-dashboard";
-import { getDraft } from "@/lib/api/hoopsiq";
+import { getDraft } from "@/lib/api/courtvision";
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getDraft: vi.fn(),
   getPlayers: vi.fn().mockResolvedValue({
     items: [],

@@ -1,14 +1,168 @@
-
-> @hoopsiq/frontend@0.1.0 dev
-> next dev --hostname 127.0.0.1 --port 3000
-
   ▲ Next.js 14.2.35
   - Local:        http://127.0.0.1:3000
   - Network:      http://127.0.0.1:3000
 
  ✓ Starting...
- ✓ Ready in 2.1s
+ ✓ Ready in 5s
+ ○ Compiling / ...
+ ✓ Compiled / in 5.7s (735 modules)
+ GET / 200 in 24ms
+ GET / 200 in 38ms
+ GET / 200 in 66ms
+ ○ Compiling /standings ...
+ ✓ Compiled /standings in 946ms (746 modules)
+ GET /standings 200 in 1141ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 3s (1777 modules)
+ GET /players 200 in 3251ms
+ GET /standings 200 in 57ms
+ GET / 200 in 180ms
+ GET /players 200 in 215ms
+ GET / 200 in 70ms
+ GET /players 200 in 128ms
+ GET / 200 in 75ms
+ GET /players 200 in 81ms
+ GET / 200 in 75ms
+ GET /players 200 in 149ms
+ ○ Compiling /rosters ...
+ ✓ Compiled /rosters in 1461ms (1777 modules)
+ GET /rosters 200 in 1881ms
+ GET /players 200 in 297ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 795ms (1782 modules)
+ GET /players/1630178 200 in 2314ms
+ ✓ Compiled in 1447ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 183ms
+ ✓ Compiled in 671ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 143ms
+ ✓ Compiled in 1395ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 59ms
+ ✓ Compiled in 803ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 76ms
+ ✓ Compiled in 521ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 89ms
+ ✓ Compiled in 1094ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 83ms
+ ✓ Compiled in 649ms (1796 modules)
+ ✓ Compiled in 326ms (902 modules)
+ GET /players/1630178?season=2025-26 200 in 77ms
+ ✓ Compiled in 673ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 80ms
+ ✓ Compiled in 872ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 86ms
+ ✓ Compiled in 881ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 70ms
+ ✓ Compiled in 1155ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 91ms
+ ✓ Compiled in 644ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 87ms
+ ✓ Compiled in 924ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 89ms
+ ✓ Compiled in 585ms (1796 modules)
+ GET /players/1630178?season=2025-26 200 in 75ms
+ ✓ Compiled in 1207ms (1796 modules)
+ ✓ Compiled in 412ms (902 modules)
+ ✓ Compiled in 282ms (902 modules)
+ ✓ Compiled in 271ms (902 modules)
+ ✓ Compiled in 414ms (902 modules)
+ ✓ Compiled in 435ms (902 modules)
+ GET /players/1630178?season=2025-26 200 in 3668ms
+ GET / 200 in 1143ms
+ GET /players 200 in 638ms
+ GET /players/1630178 200 in 254ms
+ ○ Compiling /draft ...
+ ✓ Compiled /draft in 2.6s (1803 modules)
+ GET /draft 200 in 3402ms
+ ✓ Compiled in 1053ms (904 modules)
  ○ Compiling /playoffs ...
- ✓ Compiled /playoffs in 4.3s (737 modules)
- GET /playoffs 200 in 4660ms
- GET /playoffs 200 in 41ms
+ ✓ Compiled /playoffs in 1459ms (1814 modules)
+ GET /playoffs 200 in 1671ms
+ ✓ Compiled in 2.4s (1809 modules)
+ GET / 200 in 307ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 734ms (906 modules)
+ GET /players 200 in 1131ms
+ GET /rosters 200 in 160ms
+ ✓ Compiled /standings in 464ms (911 modules)
+ GET /standings 200 in 793ms
+ ○ Compiling /compare ...
+ ✓ Compiled /compare in 2.7s (1812 modules)
+ GET /compare 200 in 3141ms
+ GET /players 200 in 154ms
+ GET /players/1630639 200 in 215ms
+ GET /players?season=2024-25 200 in 86ms
+ GET / 200 in 267ms
+ GET /players 200 in 82ms
+ GET /players/1629029 200 in 201ms
+ GET / 200 in 117ms
+ GET /rosters 200 in 169ms
+ GET /players 200 in 104ms
+ GET / 200 in 81ms
+ ○ Compiling /ai-assistant ...
+ ✓ Compiled /ai-assistant in 2.3s (1827 modules)
+ GET /ai-assistant 200 in 3395ms
+ ✓ Compiled in 1347ms (913 modules)
+ GET / 200 in 136ms
+ GET /players 200 in 360ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 649ms (907 modules)
+ GET /players/1630178 200 in 1101ms
+ GET /playoffs 200 in 119ms
+ GET /players 200 in 132ms
+ ○ Compiling / ...
+ ✓ Compiled / in 775ms (906 modules)
+ GET / 200 in 898ms
+ GET /players 200 in 109ms
+ GET /players/1628983 200 in 84ms
+ GET /players/1629029 200 in 71ms
+ GET /players/1629627 200 in 65ms
+ GET /players/1628983 200 in 60ms
+ GET /players 200 in 74ms
+ GET /players/1628378 200 in 76ms
+ GET / 200 in 62ms
+ GET /players 200 in 67ms
+ GET /rosters 200 in 103ms
+ GET /standings 200 in 101ms
+ GET /rosters 200 in 61ms
+ GET /standings 200 in 54ms
+ GET /standings?season=2021-22 200 in 67ms
+ GET /standings?season=2025-26 200 in 59ms
+ ✓ Compiled in 4s (1815 modules)
+ ✓ Compiled in 2.4s (1815 modules)
+ ✓ Compiled in 2.1s (1815 modules)
+ ✓ Compiled in 3.4s (1815 modules)
+ ✓ Compiled in 2s (1815 modules)
+ ✓ Compiled in 684ms (913 modules)
+ ✓ Compiled in 647ms (913 modules)
+ ✓ Compiled in 1723ms (1801 modules)
+ ✓ Compiled in 2.3s (1815 modules)
+ ✓ Compiled in 1789ms (1815 modules)
+ ✓ Compiled in 1794ms (1815 modules)
+ ✓ Compiled in 1962ms (1815 modules)
+ ✓ Compiled in 1656ms (1815 modules)
+ ✓ Compiled in 1596ms (1815 modules)
+ ✓ Compiled in 1506ms (1815 modules)
+ ✓ Compiled in 811ms (913 modules)
+ ✓ Compiled in 676ms (913 modules)
+ ✓ Compiled in 1968ms (913 modules)
+ ✓ Compiled in 5s (1815 modules)
+ GET /standings?season=2023-24 200 in 3649ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 984ms (1804 modules)
+ GET /_next/static/chunks/app-pages-internals.js 404 in 1257ms
+ GET /_next/static/chunks/main-app.js?v=1786171936175 404 in 1249ms
+ ✓ Compiled in 2.7s (1815 modules)
+ ✓ Compiled in 2.2s (1815 modules)
+ ✓ Compiled in 2.7s (1815 modules)
+ ✓ Compiled in 2.2s (1815 modules)
+ ✓ Compiled in 2.3s (1815 modules)
+ ✓ Compiled in 2.3s (1815 modules)
+ ✓ Compiled in 2.6s (1815 modules)
+ ✓ Compiled in 2.4s (1815 modules)
+ ✓ Compiled in 1924ms (1815 modules)
+ ✓ Compiled in 3.6s (1815 modules)
+ ✓ Compiled in 2.7s (1815 modules)
+ ✓ Compiled in 2.1s (1815 modules)
+ ✓ Compiled in 2.6s (1815 modules)
+ ✓ Compiled in 3s (1815 modules)
+[?25h

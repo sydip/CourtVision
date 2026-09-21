@@ -168,6 +168,26 @@ const similarPlayers: SimilarPlayer[] = [
     similarity_score: 74.2,
     shared_position: false,
     minutes_difference: 0.4,
+    shared_strengths: ["Assists / 36", "Rebounds / 36"],
+    largest_differences: ["True shooting %", "Points / 36"],
+    feature_comparisons: [
+      {
+        feature: "points_per_36",
+        label: "Points / 36",
+        unit: "per36",
+        player_value: 29.2,
+        candidate_value: 26.0,
+        difference: -3.2,
+      },
+      {
+        feature: "true_shooting_percentage",
+        label: "True shooting %",
+        unit: "percent",
+        player_value: 0.62,
+        candidate_value: 0.58,
+        difference: -0.04,
+      },
+    ],
   },
 ];
 
@@ -243,6 +263,10 @@ describe("PlayerProfileView", () => {
     expect(screen.queryByRole("heading", { name: "Data Freshness" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Trend Overview" })).not.toBeInTheDocument();
     expect(screen.getByText("74.2")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Statistical similarity — not identical play style/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Assists / 36")).toBeInTheDocument();
     const similarLink = screen.getByText("LeBron James").closest("a") as HTMLElement;
     expect(similarLink.getAttribute("style")).toContain("#552583");
 

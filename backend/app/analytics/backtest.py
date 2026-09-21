@@ -41,6 +41,7 @@ def run_backtest(session: Session, season: str) -> BacktestResult:
                 award_row.award_type,
                 limit=5,
                 persist=False,
+                _historical_backtest=True,
             )
         except ValueError:
             continue
@@ -61,7 +62,12 @@ def run_backtest(session: Session, season: str) -> BacktestResult:
     }
     errors: list[float] = []
     if actual_teams:
-        standings = predict_standings(session, season, persist=False)
+        standings = predict_standings(
+            session,
+            season,
+            persist=False,
+            _historical_backtest=True,
+        )
         for projected in standings.teams:
             actual_team = actual_teams.get(projected.team_id)
             if actual_team is not None and actual_team.wins is not None:

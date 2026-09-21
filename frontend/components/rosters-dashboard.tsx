@@ -8,18 +8,17 @@ import { AppShell } from "@/components/app-shell";
 import { PlayerNumberMark } from "@/components/player-number-mark";
 import {
   getAllPlayers,
-  getDataStatus,
   getPlayer,
   getPlayerSummary,
   getTeams,
-} from "@/lib/api/hoopsiq";
+} from "@/lib/api/courtvision";
 import type {
-  DataStatus,
   PlayerDetail,
   PlayerListItem,
   PlayerSeasonSummary,
   Team,
 } from "@/lib/api/schemas";
+import { useSeason } from "@/lib/state/season-context";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -589,12 +588,12 @@ const teamFacts: Record<number, Partial<TeamFacts>> = {
   },
 };
 
-export function RostersDashboard() {
+export function RostersDashboard({ initialTeamId }: { initialTeamId?: number } = {}) {
+  const { season } = useSeason();
   const searchParams = useSearchParams();
   const appliedTeamParamRef = useRef(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<PlayerListItem[]>([]);
-  const [dataStatus, setDataStatus] = useState<DataStatus | undefined>();
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [summaryMap, setSummaryMap] = useState<Record<number, PlayerSeasonSummary>>({});
   const [detailMap, setDetailMap] = useState<Record<number, PlayerDetail>>({});
@@ -613,8 +612,8 @@ export function RostersDashboard() {
     setIsInitialLoading(true);
     setHasInitialError(false);
 
-    Promise.all([getTeams(), getAllPlayers(), getDataStatus()])
-      .then(([teamsResponse, allPlayers, statusResponse]) => {
+    Promise.all([getTeams(season), getAllPlayers(season)])
+      .then(([teamsResponse, allPlayers]) => {
         if (!isActive) {
           return;
         }
@@ -623,12 +622,15 @@ export function RostersDashboard() {
         );
         setTeams(sortedTeams);
         setPlayers(allPlayers.filter((player) => player.active && player.team));
-        setDataStatus(statusResponse);
         setSelectedTeamId(
-          sortedTeams.find((team) => team.nba_team_id === defaultSelectedTeamId)?.nba_team_id ??
+          sortedTeams.find((team) => team.nba_team_id === initialTeamId)?.nba_team_id ??
+            sortedTeams.find((team) => team.nba_team_id === defaultSelectedTeamId)?.nba_team_id ??
             sortedTeams[0]?.nba_team_id ??
             null,
         );
+        if (initialTeamId && sortedTeams.some((team) => team.nba_team_id === initialTeamId)) {
+          setMode("roster");
+        }
       })
       .catch(() => {
         if (isActive) {
@@ -644,7 +646,7 @@ export function RostersDashboard() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [initialTeamId, season]);
 
   useEffect(() => {
     if (appliedTeamParamRef.current || teams.length === 0) {
@@ -673,8 +675,6 @@ export function RostersDashboard() {
         : [],
     [players, selectedTeam],
   );
-  const season = dataStatus?.current_season ?? "2025-26";
-
   useEffect(() => {
     if (!selectedTeam || selectedRoster.length === 0) {
       setSummaryMap({});
@@ -689,7 +689,7 @@ export function RostersDashboard() {
       selectedRoster.map(async (player) => {
         const [summaryResult, detailResult] = await Promise.allSettled([
           getPlayerSummary(player.nba_player_id, season),
-          getPlayer(player.nba_player_id),
+          getPlayer(player.nba_player_id, season),
         ]);
         return {
           detail: detailResult.status === "fulfilled" ? detailResult.value : undefined,

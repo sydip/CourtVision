@@ -23,7 +23,7 @@ from app.models import schema as _schema  # noqa: F401
 
 def main(argv: Sequence[str] | None = None) -> int:
     settings = get_settings()
-    parser = argparse.ArgumentParser(description="HoopsIQ ingestion commands.")
+    parser = argparse.ArgumentParser(description="CourtVision ingestion commands.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     fixtures_parser = subparsers.add_parser("fixtures", help="Ingest offline fixture data.")
@@ -109,6 +109,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     nba_provider = _build_nba_provider(args)
     _, steps = live_commands[args.command]
+    if args.skip_profiles:
+        steps = tuple(step for step in steps if step != "profiles")
     session_factory = create_session_factory(args.database_url)
     with session_scope(session_factory) as session:
         summary = run_provider_ingestion(
@@ -167,6 +169,34 @@ def _add_live_args(parser: argparse.ArgumentParser, settings: Settings) -> None:
     parser.add_argument("--max-retries", type=int, default=2)
     parser.add_argument("--backoff-seconds", type=float, default=1.0)
     parser.add_argument("--request-delay-seconds", type=float, default=0.6)
+    parser.add_argument(
+        "--roster-source",
+        choices=("active", "season"),
+        default="active",
+        help=(
+            "Player universe to sync. 'active' uses the current active roster; "
+            "'season' uses the players who actually appeared in the target season "
+            "(required for historical seasons)."
+        ),
+    )
+    parser.add_argument(
+        "--game-log-source",
+        choices=("per_player", "league"),
+        default="per_player",
+        help=(
+            "How to fetch game logs. 'per_player' makes one request per player; "
+            "'league' fetches the whole season's player game logs in a single request "
+            "(far faster for full-season syncs)."
+        ),
+    )
+    parser.add_argument(
+        "--skip-profiles",
+        action="store_true",
+        help=(
+            "Skip the per-player profile (bio) step. Players still appear with full game "
+            "logs and analytics; profiles can be backfilled separately."
+        ),
+    )
     _add_database_args(parser)
 
 
@@ -181,6 +211,8 @@ def _build_nba_provider(args: argparse.Namespace) -> NbaApiProvider:
         max_retries=args.max_retries,
         backoff_seconds=args.backoff_seconds,
         request_delay_seconds=args.request_delay_seconds,
+        roster_source=args.roster_source,
+        game_log_source=args.game_log_source,
     )
 
 

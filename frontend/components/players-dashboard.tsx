@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getThemeStyle } from "@/components/player-profile";
 import { PlayerPortrait } from "@/components/home-dashboard";
-import { getAllPlayers, getDataStatus, getSeasonSummaries } from "@/lib/api/hoopsiq";
+import { getAllPlayers, getSeasonSummaries } from "@/lib/api/courtvision";
+import { useSeason } from "@/lib/state/season-context";
 import type { PlayerListItem, PlayerSeasonSummary, Team } from "@/lib/api/schemas";
 import { formatInteger, formatNumber, formatPercent } from "@/lib/format";
 
@@ -27,7 +28,7 @@ type RankedRow = {
 export function PlayersDashboard() {
   const [players, setPlayers] = useState<PlayerListItem[]>([]);
   const [summaries, setSummaries] = useState<Record<number, PlayerSeasonSummary>>({});
-  const [season, setSeason] = useState("2025-26");
+  const { season } = useSeason();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isStatsLoading, setIsStatsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -38,13 +39,12 @@ export function PlayersDashboard() {
     setIsInitialLoading(true);
     setHasError(false);
 
-    Promise.all([getAllPlayers(), getDataStatus()])
-      .then(([allPlayers, statusResponse]) => {
+    getAllPlayers(season)
+      .then((allPlayers) => {
         if (!isActive) {
           return;
         }
         setPlayers(allPlayers.filter((player) => player.active));
-        setSeason(statusResponse.current_season);
       })
       .catch(() => {
         if (isActive) {
@@ -60,7 +60,7 @@ export function PlayersDashboard() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [season]);
 
   useEffect(() => {
     let isActive = true;

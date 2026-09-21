@@ -23,6 +23,7 @@ from app.models import (
     PlayoffTeamBoxScore,
     Team,
 )
+from app.services.seasons import get_available_seasons, validate_season
 
 router = APIRouter(tags=["playoffs"], responses={404: {"model": ErrorResponse}})
 
@@ -41,6 +42,16 @@ async def playoff_round(
     round_slug: Annotated[str, Path(pattern=r"^[a-z0-9-]+$")],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> PlayoffRoundResponse:
+    try:
+        season = validate_season(season)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Season {season} is not available. Available seasons: "
+                f"{', '.join(get_available_seasons())}."
+            ),
+        ) from exc
     round_name = round_slug.replace("-", " ").title()
     rows = session.scalars(
         select(PlayoffSeries)

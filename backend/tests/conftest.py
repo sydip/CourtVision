@@ -15,7 +15,7 @@ from app.db.session import normalize_database_url
 
 @pytest.fixture()
 def sqlite_database_url(tmp_path: Path) -> str:
-    return f"sqlite:///{tmp_path / 'hoopsiq_test.db'}"
+    return f"sqlite:///{tmp_path / 'courtvision_test.db'}"
 
 
 @pytest.fixture()

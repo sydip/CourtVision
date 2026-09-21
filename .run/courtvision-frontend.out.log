@@ -1,0 +1,92 @@
+
+> @courtvision/frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 9.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 14.2s (735 modules)
+ GET / 200 in 49ms
+ GET / 200 in 68ms
+ GET / 200 in 62ms
+ GET / 200 in 52ms
+ GET / 200 in 61ms
+ GET / 200 in 41ms
+ GET / 200 in 74ms
+ GET / 200 in 91ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 22.6s (1782 modules)
+ GET /players 200 in 24482ms
+ ○ Compiling /rosters ...
+ ✓ Compiled /rosters in 4.2s (1775 modules)
+ GET /rosters 200 in 4631ms
+ ✓ Compiled in 2.2s (1789 modules)
+ ✓ Compiled in 313ms (899 modules)
+ ✓ Compiled in 415ms (1789 modules)
+ GET /players?season=2021-22 200 in 388ms
+ GET / 200 in 158ms
+ GET /players 200 in 56ms
+ ○ Compiling /players/[playerId] ...
+ ✓ Compiled /players/[playerId] in 1534ms (1780 modules)
+ GET /players/1628983 200 in 7550ms
+ ○ Compiling /playoffs ...
+ ✓ Compiled /playoffs in 1362ms (1791 modules)
+ GET /playoffs 200 in 1469ms
+ ✓ Compiled /ai-assistant in 457ms (1801 modules)
+ GET /ai-assistant 200 in 530ms
+ ✓ Compiled in 1925ms (1808 modules)
+ ✓ Compiled in 599ms (1808 modules)
+ ✓ Compiled in 408ms (1808 modules)
+ ✓ Compiled in 476ms (1808 modules)
+ ✓ Compiled in 944ms (1808 modules)
+ ✓ Compiled in 423ms (907 modules)
+ ✓ Compiled in 544ms (907 modules)
+ ✓ Compiled in 345ms (907 modules)
+ GET /ai-assistant 200 in 395ms
+ ✓ Compiled in 2.2s (1808 modules)
+ GET /ai-assistant?season=2025-26 200 in 113ms
+ GET /ai-assistant?season=2025-26 200 in 55ms
+ ✓ Compiled in 883ms (1808 modules)
+ ✓ Compiled in 550ms (1808 modules)
+ ✓ Compiled in 2.4s (1808 modules)
+ ✓ Compiled in 405ms (907 modules)
+ ✓ Compiled in 540ms (1808 modules)
+ GET /ai-assistant?season=2025-26 200 in 143ms
+ GET /ai-assistant?season=2025-26 200 in 31ms
+ GET / 200 in 153ms
+ GET /players 200 in 333ms
+ GET /players/1629029 200 in 122ms
+ GET / 200 in 79ms
+ ○ Compiling /playoffs ...
+ ✓ Compiled /playoffs in 3.2s (908 modules)
+ GET /playoffs 200 in 4060ms
+ GET /rosters?team=1610612747 200 in 132ms
+ GET /ai-assistant 200 in 85ms
+ GET / 200 in 133ms
+ ✓ Compiled in 1908ms (1810 modules)
+ ✓ Compiled in 659ms (1810 modules)
+ ✓ Compiled in 225ms (907 modules)
+ ✓ Compiled in 217ms (907 modules)
+ ✓ Compiled in 229ms (907 modules)
+ ✓ Compiled in 935ms (1810 modules)
+ GET / 200 in 117ms
+ ○ Compiling /players ...
+ ✓ Compiled /players in 709ms (908 modules)
+ GET /players?season=2025-26 200 in 832ms
+ GET /rosters?season=2025-26 200 in 32ms
+ GET /players 200 in 55ms
+ GET /players/1629029 200 in 120ms
+ GET /ai-assistant 200 in 59ms
+ GET /rosters 200 in 94ms
+ ○ Compiling /standings ...
+ ✓ Compiled /standings in 3.3s (1804 modules)
+ GET /standings 200 in 3467ms
+ GET /playoffs 200 in 105ms
+ ○ Compiling /compare ...
+ ✓ Compiled /compare in 1186ms (1811 modules)
+ GET /compare 200 in 1549ms
+ GET /players 200 in 96ms
+ GET / 200 in 441ms

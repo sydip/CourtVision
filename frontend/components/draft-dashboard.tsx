@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { getTeamTheme, getTeamThemeStyle } from "@/components/rosters-dashboard";
-import { getDraft } from "@/lib/api/hoopsiq";
+import { getDraft } from "@/lib/api/courtvision";
 import type { DraftPick, DraftResponse } from "@/lib/api/schemas";
 
 type DraftRound = 1 | 2;

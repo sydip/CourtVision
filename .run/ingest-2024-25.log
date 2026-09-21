@@ -1,0 +1,7 @@
+[nba_api:sync-season] starting teams (fetched=0, inserted=0, updated=0, rejected=0)
+[nba_api:sync-season] completed teams (fetched=30, inserted=0, updated=0, rejected=0)
+[nba_api:sync-season] starting players (fetched=30, inserted=0, updated=0, rejected=0)
+[nba_api:sync-season] completed players (fetched=599, inserted=125, updated=168, rejected=0)
+[nba_api:sync-season] starting profiles (fetched=599, inserted=125, updated=168, rejected=0)
+[nba_api:sync-season] completed profiles (fetched=1168, inserted=125, updated=332, rejected=0)
+[nba_api:sync-season] starting games (fetched=1168, inserted=125, updated=332, rejected=0)

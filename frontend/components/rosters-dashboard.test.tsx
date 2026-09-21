@@ -20,7 +20,7 @@ const getPlayersMock = vi.hoisted(() => vi.fn());
 const getPlayerSummaryMock = vi.hoisted(() => vi.fn());
 const getTeamsMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/api/hoopsiq", () => ({
+vi.mock("@/lib/api/courtvision", () => ({
   getAllPlayers: getAllPlayersMock,
   getDataStatus: getDataStatusMock,
   getPlayer: getPlayerMock,
@@ -108,10 +108,14 @@ describe("RostersDashboard", () => {
       screen.queryByText(/franchise helped define several offensive eras/i),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("NBA Championships")).not.toBeInTheDocument();
+    expect(document.querySelector(".team-card-grid")).toBeInTheDocument();
+    expect(document.querySelectorAll(".team-roster-card")).toHaveLength(2);
 
     fireEvent.click(warriorsCard);
 
-    expect(await screen.findByRole("heading", { name: "Golden State Warriors" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Golden State Warriors" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Overview" })).toHaveClass("active");
     expect(
       await screen.findByText(/franchise helped define several offensive eras/i),

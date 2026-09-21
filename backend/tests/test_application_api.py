@@ -9,14 +9,31 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db_session
 from app.main import create_app
-from app.models import Game, Player, PlayerGameStat, PlayerSeasonSummary, Team
+from app.models import (
+    Game,
+    Player,
+    PlayerGameStat,
+    PlayerSeasonSummary,
+    RosterMembership,
+    StandingsSnapshot,
+    Team,
+    TeamSeasonSummary,
+)
 
 
 def test_reference_routes_return_stored_dimensions(db_session: Session) -> None:
     _seed_application_data(db_session)
     client = _client(db_session)
 
-    assert client.get("/api/seasons").json() == {"seasons": ["2025-26"]}
+    seasons = client.get("/api/seasons").json()
+    assert seasons["seasons"] == [
+        "2025-26",
+        "2024-25",
+        "2023-24",
+        "2022-23",
+        "2021-22",
+    ]
+    assert seasons["data"][0]["season"] == "2021-22"
 
     teams_response = client.get("/api/teams")
     assert teams_response.status_code == 200
@@ -35,7 +52,10 @@ def test_player_search_is_case_insensitive_and_paginated(db_session: Session) ->
 
     assert response.status_code == 200
     body = response.json()
-    assert body["meta"] == {
+    assert {
+        key: body["meta"][key]
+        for key in ("limit", "offset", "total", "next_offset", "previous_offset")
+    } == {
         "limit": 1,
         "offset": 0,
         "total": 1,
@@ -44,6 +64,66 @@ def test_player_search_is_case_insensitive_and_paginated(db_session: Session) ->
     }
     assert body["items"][0]["full_name"] == "Stephen Curry"
     assert body["items"][0]["team"]["abbreviation"] == "GSW"
+
+
+def test_query_style_routes_are_season_isolated(db_session: Session) -> None:
+    seeded = _seed_application_data(db_session)
+    _seed_2021_22_data(db_session, seeded)
+    client = _client(db_session)
+
+    players_2021 = client.get("/api/players?season=2021-22").json()
+    players_2025 = client.get("/api/players?season=2025-26").json()
+    assert players_2021["meta"]["season"] == "2021-22"
+    assert players_2025["meta"]["season"] == "2025-26"
+
+    routes = [
+        "/api/players/201939?season=2021-22",
+        "/api/players/201939/summary?season=2021-22",
+        "/api/players/201939/games?season=2021-22",
+        "/api/players/201939/trends?season=2021-22",
+        "/api/players/201939/splits?season=2021-22",
+        "/api/players/201939/benchmarks?season=2021-22",
+        "/api/teams?season=2021-22",
+        "/api/teams/1610612744?season=2021-22",
+        "/api/teams/1610612744/roster?season=2021-22",
+        "/api/teams/1610612744/summary?season=2021-22",
+        "/api/standings?season=2021-22",
+        "/api/compare?season=2021-22&player_a=201939&player_b=2544",
+        "/api/similar-players?season=2021-22&player_id=201939",
+        "/api/reports/player/201939?season=2021-22",
+    ]
+    for route in routes:
+        response = client.get(route)
+        assert response.status_code == 200, (route, response.text)
+        assert response.json()["meta"]["season"] == "2021-22"
+
+    old_summary = client.get("/api/players/201939/summary?season=2021-22").json()
+    current_summary = client.get("/api/players/201939/summary?season=2025-26").json()
+    assert old_summary["points_per_game"] == 20.0
+    assert current_summary["points_per_game"] == 27.0
+    assert client.get("/api/standings?season=2021-22").json()["standings"][0]["wins"] == 53
+
+
+def test_unsupported_season_and_missing_player_season_are_clear(db_session: Session) -> None:
+    _seed_application_data(db_session)
+    no_history = Player(
+        nba_player_id=999,
+        slug="no-history-999",
+        full_name="No History",
+    )
+    db_session.add(no_history)
+    db_session.commit()
+    client = _client(db_session)
+
+    unsupported = client.get("/api/players?season=2020-21")
+    assert unsupported.status_code == 400
+    assert unsupported.json()["error"]["message"] == (
+        "Season 2020-21 is not available. Available seasons: "
+        "2021-22, 2022-23, 2023-24, 2024-25, 2025-26."
+    )
+    missing = client.get("/api/players/999?season=2021-22")
+    assert missing.status_code == 404
+    assert "has no stored data for season 2021-22" in missing.json()["error"]["message"]
 
 
 def test_player_detail_and_missing_player_error(db_session: Session) -> None:
@@ -111,6 +191,11 @@ def test_season_summaries_returns_every_player_in_one_call(db_session: Session) 
 
 def test_similar_players_route_uses_stored_season_summaries(db_session: Session) -> None:
     _seed_application_data(db_session)
+    # The similarity engine only considers players above the game/minute thresholds,
+    # so promote the seeded 2025-26 summaries to a qualifying sample size.
+    for summary in db_session.query(PlayerSeasonSummary).filter_by(season="2025-26").all():
+        summary.games_played = 40
+    db_session.commit()
     client = _client(db_session)
 
     response = client.get(
@@ -128,6 +213,8 @@ def test_similar_players_route_uses_stored_season_summaries(db_session: Session)
     assert similar["summary"]["points_per_game"] == 26.0
     assert 0 <= similar["similarity_score"] <= 100
     assert similar["minutes_difference"] == 0.0
+    assert isinstance(similar["shared_strengths"], list)
+    assert similar["feature_comparisons"]
 
 
 def test_player_games_filters_sorting_and_pagination(db_session: Session) -> None:
@@ -432,3 +519,104 @@ def _summary(
         analytics_warnings=[{"code": "small_sample", "message": "2 games"}],
         analytics_rebuilt_at=datetime(2026, 6, 30, tzinfo=UTC),
     )
+
+
+def _seed_2021_22_data(db_session: Session, seeded: dict[str, Any]) -> None:
+    curry: Player = seeded["curry"]
+    lebron: Player = seeded["lebron"]
+    warriors = curry.team
+    lakers = lebron.team
+    assert warriors is not None and lakers is not None
+    game = Game(
+        nba_game_id="0022100001",
+        season="2021-22",
+        game_date=date(2021, 10, 20),
+        home_team=warriors,
+        away_team=lakers,
+        home_score=110,
+        away_score=105,
+    )
+    curry_summary = _summary(curry, warriors, points_per_game=Decimal("20.00"))
+    curry_summary.season = "2021-22"
+    lebron_summary = _summary(lebron, lakers, points_per_game=Decimal("24.00"))
+    lebron_summary.season = "2021-22"
+    db_session.add_all(
+        [
+            game,
+            PlayerGameStat(
+                player=curry,
+                game=game,
+                team=warriors,
+                season="2021-22",
+                matchup="GSW vs. LAL",
+                is_home=True,
+                result="W",
+                minutes=Decimal("30"),
+                points=20,
+                rebounds=4,
+                assists=6,
+                field_goals_made=7,
+                field_goals_attempted=15,
+            ),
+            PlayerGameStat(
+                player=lebron,
+                game=game,
+                team=lakers,
+                season="2021-22",
+                matchup="LAL @ GSW",
+                is_home=False,
+                result="L",
+                minutes=Decimal("34"),
+                points=24,
+                rebounds=8,
+                assists=7,
+                field_goals_made=9,
+                field_goals_attempted=18,
+            ),
+            curry_summary,
+            lebron_summary,
+            RosterMembership(
+                player=curry,
+                team=warriors,
+                season="2021-22",
+                jersey_number="30",
+                position="G",
+                roster_status="active",
+                source="fixture",
+            ),
+            RosterMembership(
+                player=lebron,
+                team=lakers,
+                season="2021-22",
+                jersey_number="6",
+                position="F",
+                roster_status="active",
+                source="fixture",
+            ),
+            TeamSeasonSummary(
+                team=warriors,
+                season="2021-22",
+                conference="West",
+                division="Pacific",
+                wins=53,
+                losses=29,
+                win_pct=Decimal("0.646"),
+                conference_rank=3,
+                points_per_game=Decimal("111.0"),
+                points_allowed_per_game=Decimal("105.5"),
+                data_source="fixture",
+            ),
+            StandingsSnapshot(
+                team=warriors,
+                season="2021-22",
+                snapshot_type="final_regular_season",
+                conference="West",
+                rank=3,
+                wins=53,
+                losses=29,
+                win_pct=Decimal("0.646"),
+                source="fixture",
+            ),
+        ]
+    )
+    db_session.commit()

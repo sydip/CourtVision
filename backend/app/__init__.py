@@ -1,1 +1,1 @@
-"""HoopsIQ FastAPI backend package."""
+"""CourtVision FastAPI backend package."""

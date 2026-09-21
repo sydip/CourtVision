@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -36,6 +37,39 @@ class TimestampMixin:
     )
 
 
+SEASON_SLUG_CHECK = "length(season) = 7 AND substr(season, 5, 1) = '-'"
+
+
+class Season(TimestampMixin, Base):
+    __tablename__ = "seasons"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_seasons_slug"),
+        UniqueConstraint("start_year", name="uq_seasons_start_year"),
+        CheckConstraint(
+            "length(slug) = 7 AND substr(slug, 5, 1) = '-'", name="ck_seasons_slug_format"
+        ),
+        CheckConstraint("end_year = start_year + 1", name="ck_seasons_year_range"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(7), nullable=False)
+    start_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(32), nullable=False)
+    is_completed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    is_current: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    supports_predictions: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    supports_jordan_predictions: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
+
 class Team(TimestampMixin, Base):
     __tablename__ = "teams"
     __table_args__ = (UniqueConstraint("nba_team_id", name="uq_teams_nba_team_id"),)
@@ -63,7 +97,7 @@ class Team(TimestampMixin, Base):
     )
     player_game_stats: Mapped[list[PlayerGameStat]] = relationship(back_populates="team")
     season_summaries: Mapped[list[PlayerSeasonSummary]] = relationship(back_populates="team")
-    team_season_stats: Mapped[list[TeamSeasonStat]] = relationship(
+    team_season_stats: Mapped[list[TeamSeasonSummary]] = relationship(
         back_populates="team",
         cascade="all, delete-orphan",
     )
@@ -232,11 +266,36 @@ class PlayerGameStat(TimestampMixin, Base):
     team: Mapped[Team | None] = relationship(back_populates="player_game_stats")
 
 
+class TeamGameStat(TimestampMixin, Base):
+    __tablename__ = "team_game_stats"
+    __table_args__ = (
+        UniqueConstraint("team_id", "game_id", name="uq_team_game_stats_team_game"),
+        Index("ix_team_game_stats_season", "season"),
+        Index("ix_team_game_stats_team_id", "team_id"),
+        Index("ix_team_game_stats_game_id", "game_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id", ondelete="CASCADE"), nullable=False)
+    season: Mapped[str] = mapped_column(String(7), nullable=False)
+    is_home: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, nullable=False)
+    opponent_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    result: Mapped[str] = mapped_column(String(1), nullable=False)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    team: Mapped[Team] = relationship()
+    game: Mapped[Game] = relationship()
+
+
 class PlayoffSeries(TimestampMixin, Base):
     __tablename__ = "playoff_series"
     __table_args__ = (
         UniqueConstraint(
-            "season", "round_name", "winner_team_id", "loser_team_id",
+            "season",
+            "round_name",
+            "winner_team_id",
+            "loser_team_id",
             name="uq_playoff_series_season_round_teams",
         ),
         Index("ix_playoff_series_season_round", "season", "round_name"),
@@ -263,7 +322,8 @@ class PlayoffSeries(TimestampMixin, Base):
     winner_team: Mapped[Team] = relationship(foreign_keys=[winner_team_id])
     loser_team: Mapped[Team] = relationship(foreign_keys=[loser_team_id])
     games: Mapped[list[PlayoffGame]] = relationship(
-        back_populates="series", cascade="all, delete-orphan",
+        back_populates="series",
+        cascade="all, delete-orphan",
         order_by="PlayoffGame.game_number",
     )
 
@@ -302,10 +362,12 @@ class PlayoffGame(TimestampMixin, Base):
     home_team: Mapped[Team] = relationship(foreign_keys=[home_team_id])
     away_team: Mapped[Team] = relationship(foreign_keys=[away_team_id])
     team_box_scores: Mapped[list[PlayoffTeamBoxScore]] = relationship(
-        back_populates="game", cascade="all, delete-orphan",
+        back_populates="game",
+        cascade="all, delete-orphan",
     )
     player_box_scores: Mapped[list[PlayoffPlayerBoxScore]] = relationship(
-        back_populates="game", cascade="all, delete-orphan",
+        back_populates="game",
+        cascade="all, delete-orphan",
     )
 
 
@@ -351,7 +413,9 @@ class PlayoffPlayerBoxScore(TimestampMixin, Base):
     __tablename__ = "playoff_player_box_scores"
     __table_args__ = (
         UniqueConstraint(
-            "game_id", "team_id", "player_name",
+            "game_id",
+            "team_id",
+            "player_name",
             name="uq_playoff_player_box_scores_game_team_player",
         ),
         Index("ix_playoff_player_box_scores_game_id", "game_id"),
@@ -427,9 +491,12 @@ class PlayerSeasonSummary(TimestampMixin, Base):
     rebounds_per_game: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
     assists_per_game: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
     turnovers_per_game: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    steals_per_game: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    blocks_per_game: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
     plus_minus_per_game: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     true_shooting_percentage: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
     true_shooting_source: Mapped[str | None] = mapped_column(String(64))
+    effective_field_goal_percentage: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
     usage_rate: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
     points_per_36: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     rebounds_per_36: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
@@ -444,6 +511,10 @@ class PlayerSeasonSummary(TimestampMixin, Base):
     efficiency_trend_value: Mapped[Decimal | None] = mapped_column(Numeric(8, 4))
     trend_payload: Mapped[dict[str, object] | None] = mapped_column(JSON)
     analytics_warnings: Mapped[list[dict[str, object]] | None] = mapped_column(JSON)
+    totals: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    rolling_averages: Mapped[list[dict[str, object]] | None] = mapped_column(JSON)
+    split_payload: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    similarity_vector: Mapped[dict[str, object] | None] = mapped_column(JSON)
     analytics_rebuilt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     data_source: Mapped[str] = mapped_column(
         String(80),
@@ -493,6 +564,9 @@ class SyncRun(TimestampMixin, Base):
     rejected_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    failed_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     error_message: Mapped[str | None] = mapped_column(Text)
 
 
@@ -523,7 +597,7 @@ class PerformanceReport(TimestampMixin, Base):
     player: Mapped[Player | None] = relationship(back_populates="performance_reports")
 
 
-class TeamSeasonStat(TimestampMixin, Base):
+class TeamSeasonSummary(TimestampMixin, Base):
     __tablename__ = "team_season_stats"
     __table_args__ = (
         UniqueConstraint("team_id", "season", name="uq_team_season_stats_team_id_season"),
@@ -537,16 +611,22 @@ class TeamSeasonStat(TimestampMixin, Base):
         nullable=False,
     )
     season: Mapped[str] = mapped_column(String(16), nullable=False)
+    conference: Mapped[str | None] = mapped_column(String(24))
+    division: Mapped[str | None] = mapped_column(String(48))
     wins: Mapped[int | None] = mapped_column(Integer)
     losses: Mapped[int | None] = mapped_column(Integer)
+    win_pct: Mapped[Decimal | None] = mapped_column(Numeric(6, 3))
     conference_rank: Mapped[int | None] = mapped_column(Integer)
     division_rank: Mapped[int | None] = mapped_column(Integer)
+    points_per_game: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    points_allowed_per_game: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     offensive_rating: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     defensive_rating: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     net_rating: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     pace: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     made_playoffs: Mapped[bool | None] = mapped_column(Boolean)
     playoff_result: Mapped[str | None] = mapped_column(String(120))
+    leaders: Mapped[dict[str, object] | None] = mapped_column(JSON)
     data_source: Mapped[str] = mapped_column(String(80), nullable=False)
     is_synthetic: Mapped[bool] = mapped_column(
         Boolean,
@@ -556,6 +636,85 @@ class TeamSeasonStat(TimestampMixin, Base):
     )
 
     team: Mapped[Team] = relationship(back_populates="team_season_stats")
+
+
+# Compatibility name retained for the existing analytics and assistant services.
+TeamSeasonStat = TeamSeasonSummary
+
+
+class StandingsSnapshot(TimestampMixin, Base):
+    __tablename__ = "standings_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "season", "snapshot_type", "team_id", name="uq_standings_snapshot_season_type_team"
+        ),
+        CheckConstraint(SEASON_SLUG_CHECK, name="ck_standings_snapshots_season_format"),
+        CheckConstraint(
+            "snapshot_type IN ('final_regular_season', 'current', 'projected')",
+            name="ck_standings_snapshots_type",
+        ),
+        Index("ix_standings_snapshots_season", "season"),
+        Index("ix_standings_snapshots_team_id", "team_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    season: Mapped[str] = mapped_column(String(7), nullable=False)
+    snapshot_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    conference: Mapped[str] = mapped_column(String(24), nullable=False)
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    wins: Mapped[int] = mapped_column(Integer, nullable=False)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False)
+    win_pct: Mapped[Decimal] = mapped_column(Numeric(6, 3), nullable=False)
+    games_back: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    conference_record: Mapped[str | None] = mapped_column(String(16))
+    division_record: Mapped[str | None] = mapped_column(String(16))
+    home_record: Mapped[str | None] = mapped_column(String(16))
+    away_record: Mapped[str | None] = mapped_column(String(16))
+    last_10: Mapped[str | None] = mapped_column(String(16))
+    streak: Mapped[str | None] = mapped_column(String(16))
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    team: Mapped[Team] = relationship()
+
+
+class RosterMembership(TimestampMixin, Base):
+    __tablename__ = "roster_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "player_id",
+            "team_id",
+            "season",
+            "start_date",
+            name="uq_roster_memberships_player_team_season_start",
+        ),
+        CheckConstraint(SEASON_SLUG_CHECK, name="ck_roster_memberships_season_format"),
+        CheckConstraint(
+            "roster_status IN ('active', 'inactive', 'two_way', 'waived', 'traded', 'free_agent')",
+            name="ck_roster_memberships_status",
+        ),
+        Index("ix_roster_memberships_player_id", "player_id"),
+        Index("ix_roster_memberships_team_id", "team_id"),
+        Index("ix_roster_memberships_season", "season"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    season: Mapped[str] = mapped_column(String(7), nullable=False)
+    jersey_number: Mapped[str | None] = mapped_column(String(8))
+    position: Mapped[str | None] = mapped_column(String(32))
+    roster_status: Mapped[str] = mapped_column(String(24), nullable=False)
+    is_projected_starter: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    depth_order: Mapped[int | None] = mapped_column(Integer)
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    source: Mapped[str] = mapped_column(String(80), nullable=False)
+    player: Mapped[Player] = relationship()
+    team: Mapped[Team] = relationship()
 
 
 class PlayerTeamSeason(TimestampMixin, Base):
@@ -691,6 +850,73 @@ class Prediction(Base):
     model_version: Mapped[str] = mapped_column(String(64), nullable=False)
     random_seed: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
+
+
+class PredictionRun(Base):
+    __tablename__ = "prediction_runs"
+    __table_args__ = (
+        CheckConstraint(SEASON_SLUG_CHECK, name="ck_prediction_runs_season_format"),
+        CheckConstraint(
+            "prediction_type IN ('all_nba', 'standings', 'finals_winner')",
+            name="ck_prediction_runs_type",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'running', 'completed', 'failed')",
+            name="ck_prediction_runs_status",
+        ),
+        Index("ix_prediction_runs_season", "season"),
+        Index("ix_prediction_runs_type", "prediction_type"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    season: Mapped[str] = mapped_column(String(7), nullable=False)
+    prediction_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    training_seasons: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    feature_set_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="pending", server_default="pending"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    results: Mapped[list[PredictionResult]] = relationship(
+        back_populates="prediction_run", cascade="all, delete-orphan"
+    )
+
+
+class PredictionResult(Base):
+    __tablename__ = "prediction_results"
+    __table_args__ = (
+        CheckConstraint(SEASON_SLUG_CHECK, name="ck_prediction_results_season_format"),
+        CheckConstraint(
+            "entity_type IN ('player', 'team')", name="ck_prediction_results_entity_type"
+        ),
+        Index("ix_prediction_results_run_id", "prediction_run_id"),
+        Index("ix_prediction_results_season", "season"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prediction_run_id: Mapped[int] = mapped_column(
+        ForeignKey("prediction_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    season: Mapped[str] = mapped_column(String(7), nullable=False)
+    prediction_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    predicted_rank: Mapped[int | None] = mapped_column(Integer)
+    predicted_label: Mapped[str | None] = mapped_column(String(120))
+    probability: Mapped[Decimal | None] = mapped_column(Numeric(8, 6))
+    score: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    explanation_json: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    prediction_run: Mapped[PredictionRun] = relationship(back_populates="results")
 
 
 class Injury(TimestampMixin, Base):

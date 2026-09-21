@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from math import sqrt
 from typing import Annotated, Any, Literal, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session, aliased, joinedload
 
 from app.analytics.efficiency import calculate_true_shooting
 from app.analytics.rolling import calculate_rolling_averages
+from app.analytics.similarity import (
+    PlayerFeatureRow,
+    compute_feature_values,
+    rank_similar_players,
+)
 from app.analytics.splits import calculate_home_away_splits, categorize_rest_days
 from app.analytics.types import GameLog, SplitSummary
 from app.api.schemas import (
+    ApiMetadata,
     BenchmarksResponse,
     CompareMetricResponse,
     ComparePlayerResponse,
@@ -36,34 +41,47 @@ from app.api.schemas import (
     ReportSentenceResponse,
     RestSplitsResponse,
     RollingTrendPointResponse,
+    RosterMemberResponse,
+    SeasonItemResponse,
     SeasonsResponse,
+    SimilarFeatureComparison,
     SimilarPlayerResponse,
     SimilarPlayersResponse,
     SplitResponse,
+    StandingRowResponse,
+    StandingsResponse,
+    TeamDetailResponse,
     TeamResponse,
+    TeamRosterResponse,
+    TeamSeasonSummaryApiResponse,
     TeamsResponse,
     TrendsResponse,
 )
+from app.core.config import get_settings
 from app.db.session import get_db_session
-from app.models import DraftPick, Game, Player, PlayerGameStat, PlayerSeasonSummary, SyncRun, Team
+from app.models import (
+    DraftPick,
+    Game,
+    Player,
+    PlayerGameStat,
+    PlayerSeasonSummary,
+    RosterMembership,
+    StandingsSnapshot,
+    SyncRun,
+    Team,
+    TeamSeasonSummary,
+)
+from app.services.seasons import (
+    PREDICTION_SEASON,
+    get_available_seasons,
+    get_default_season,
+    list_seasons,
+    player_has_season,
+    team_has_season,
+    validate_season,
+)
 
 router = APIRouter(tags=["application"], responses={404: {"model": ErrorResponse}})
-
-SIMILARITY_METRICS = (
-    "games_played",
-    "minutes_per_game",
-    "points_per_game",
-    "rebounds_per_game",
-    "assists_per_game",
-    "turnovers_per_game",
-    "plus_minus_per_game",
-    "true_shooting_percentage",
-    "usage_rate",
-    "points_per_36",
-    "rebounds_per_36",
-    "assists_per_36",
-    "turnovers_per_36",
-)
 
 
 @router.get(
@@ -71,19 +89,25 @@ SIMILARITY_METRICS = (
     response_model=SeasonsResponse,
     summary="List seasons",
     description=(
-        "Returns every season currently represented in stored games, stats, "
-        "summaries, or sync runs."
+        "Returns every historical data season and the supported prediction season."
     ),
 )
 async def seasons(session: Annotated[Session, Depends(get_db_session)]) -> SeasonsResponse:
-    season_values: set[str] = set()
-    for model in (Game, PlayerGameStat, PlayerSeasonSummary, SyncRun):
-        season_values.update(
-            season
-            for season in session.scalars(select(model.season).where(model.season.is_not(None)))
-            if season is not None
-        )
-    return SeasonsResponse(seasons=sorted(season_values, reverse=True))
+    rows = [row for row in list_seasons(session) if row.season != PREDICTION_SEASON]
+    return SeasonsResponse(
+        seasons=[row.season for row in reversed(rows)],
+        data=[
+            SeasonItemResponse(
+                season=row.season,
+                displayName=row.display_name,
+                isCompleted=row.is_completed,
+                isCurrent=row.is_current,
+                supportsPredictions=row.supports_predictions,
+                supportsJordanPredictions=row.supports_jordan_predictions,
+            )
+            for row in rows
+        ],
+    )
 
 
 @router.get(
@@ -92,9 +116,15 @@ async def seasons(session: Annotated[Session, Depends(get_db_session)]) -> Seaso
     summary="List teams",
     description="Returns stored NBA teams ordered by abbreviation.",
 )
-async def teams(session: Annotated[Session, Depends(get_db_session)]) -> TeamsResponse:
-    rows = session.scalars(select(Team).order_by(Team.abbreviation)).all()
-    return TeamsResponse(teams=[_team_response(team) for team in rows])
+async def teams(
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query(description="Season in YYYY-YY format.")] = None,
+) -> TeamsResponse:
+    selected = _resolve_season_or_400(season)
+    rows = _teams_for_season(session, selected)
+    return TeamsResponse(
+        teams=[_team_response(team) for team in rows], meta=_api_meta(session, selected)
+    )
 
 
 @router.get(
@@ -175,8 +205,10 @@ async def players(
     q: Annotated[str | None, Query(description="Partial player name search.")] = None,
     limit: Annotated[int, Query(ge=1, le=100, description="Maximum players to return.")] = 25,
     offset: Annotated[int, Query(ge=0, description="Number of players to skip.")] = 0,
+    season: Annotated[str | None, Query(description="Season in YYYY-YY format.")] = None,
 ) -> PaginatedPlayersResponse:
-    conditions = []
+    selected = _resolve_season_or_400(season)
+    conditions = [_player_season_exists(selected)]
     if q:
         conditions.append(Player.full_name.ilike(f"%{q.strip()}%"))
     total = _count(session, Player, conditions)
@@ -189,8 +221,10 @@ async def players(
         .offset(offset)
     ).all()
     return PaginatedPlayersResponse(
-        items=[_player_list_item(player) for player in rows],
-        meta=_page_meta(limit, offset, total),
+        items=[_player_list_item_for_season(session, player, selected) for player in rows],
+        meta=_page_meta(limit, offset, total).model_copy(
+            update=_api_meta(session, selected).model_dump()
+        ),
     )
 
 
@@ -203,9 +237,27 @@ async def players(
 async def player_detail(
     player_id: Annotated[int, Path(gt=0, description="Internal player ID or NBA player ID.")],
     session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query(description="Season in YYYY-YY format.")] = None,
 ) -> PlayerDetail:
+    selected = _resolve_season_or_400(season)
     player = _get_player_or_404(session, player_id)
-    return _player_detail(player)
+    _ensure_player_has_season(session, player, selected)
+    membership = _season_membership(session, player.id, selected)
+    detail = _player_detail(player).model_copy(
+        update={
+            "team": _season_team_response(session, player.id, selected),
+            "position": membership.position
+            if membership and membership.position
+            else player.position,
+            "jersey_number": (
+                membership.jersey_number
+                if membership and membership.jersey_number
+                else player.jersey_number
+            ),
+            "meta": _api_meta(session, selected),
+        }
+    )
+    return detail
 
 
 @router.get(
@@ -218,6 +270,7 @@ async def season_summaries(
     season: Annotated[str, Path(min_length=4, max_length=16)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> PlayerSeasonSummariesResponse:
+    _resolve_season_or_400(season)
     rows = session.execute(
         select(PlayerSeasonSummary, Player)
         .join(Player, PlayerSeasonSummary.player_id == Player.id)
@@ -241,7 +294,9 @@ async def player_summary(
 ) -> PlayerSeasonSummaryResponse:
     player = _get_player_or_404(session, player_id)
     summary = _get_summary_or_404(session, player.id, season)
-    return _summary_response(player, summary)
+    return _summary_response(player, summary).model_copy(
+        update={"meta": _api_meta(session, season)}
+    )
 
 
 @router.get(
@@ -309,7 +364,9 @@ async def player_games(
             _game_log_item(stat=stat, game=game, home_team=home, away_team=away)
             for stat, game, home, away in rows
         ],
-        meta=_page_meta(limit, offset, total),
+        meta=_page_meta(limit, offset, total).model_copy(
+            update=_api_meta(session, season).model_dump()
+        ),
     )
 
 
@@ -338,6 +395,7 @@ async def player_trends(
         efficiency_trend=summary.efficiency_trend,
         efficiency_trend_value=_float(summary.efficiency_trend_value),
         payload=_json_dict(summary.trend_payload),
+        meta=_api_meta(session, season),
     )
 
 
@@ -363,6 +421,7 @@ async def player_splits(
         season=season,
         home=_split_response(splits.get("home")),
         away=_split_response(splits.get("away")),
+        meta=_api_meta(session, season),
     )
 
 
@@ -379,16 +438,21 @@ async def player_benchmarks(
 ) -> BenchmarksResponse:
     player = _get_player_or_404(session, player_id)
     summary = _get_summary_or_404(session, player.id, season)
-    return _benchmarks_response(player, summary)
+    return _benchmarks_response(player, summary).model_copy(
+        update={"meta": _api_meta(session, season)}
+    )
 
 
 @router.get(
     "/players/{player_id}/seasons/{season}/similar",
     response_model=SimilarPlayersResponse,
-    summary="Find similar players",
+    summary="Find statistically similar players",
     description=(
-        "Ranks stored players by similarity to the selected player using normalized "
-        "season-summary metrics. This route only uses PostgreSQL data."
+        "Ranks stored players by statistical similarity to the selected player. A per-role "
+        "feature vector (per-36 scoring, rebounding, playmaking, steals, blocks, turnovers, "
+        "true-shooting, usage when available, and minutes) is standardized across the eligible "
+        "player pool and compared with cosine similarity. Results describe statistical "
+        "resemblance, not identical play style, and use only stored PostgreSQL data."
     ),
 )
 async def similar_players(
@@ -396,6 +460,7 @@ async def similar_players(
     season: Annotated[str, Path(min_length=4, max_length=16)],
     session: Annotated[Session, Depends(get_db_session)],
     limit: Annotated[int, Query(ge=1, le=10)] = 5,
+    same_position_only: Annotated[bool, Query()] = False,
 ) -> SimilarPlayersResponse:
     player = _get_player_or_404(session, player_id)
     summary = _get_summary_or_404(session, player.id, season)
@@ -405,41 +470,82 @@ async def similar_players(
         .options(joinedload(Player.team))
         .where(PlayerSeasonSummary.season == season)
     ).all()
-    metric_scales = _similarity_metric_scales([row_summary for _, row_summary in rows])
-    candidates: list[tuple[float, bool, str, Player, PlayerSeasonSummary]] = []
-    for candidate, candidate_summary in rows:
-        if candidate.id == player.id:
-            continue
-        similarity_score = _similarity_score(summary, candidate_summary, metric_scales)
-        if similarity_score is None:
-            continue
-        shared_position = bool(
-            player.position
-            and candidate.position
-            and player.position.casefold() == candidate.position.casefold()
-        )
-        candidates.append(
-            (similarity_score, shared_position, candidate.full_name, candidate, candidate_summary)
-        )
 
-    candidates.sort(key=lambda item: (-item[0], not item[1], item[2]))
-    return SimilarPlayersResponse(
-        player_id=player.id,
-        nba_player_id=player.nba_player_id,
-        season=season,
-        players=[
+    candidate_index = {candidate.id: (candidate, row) for candidate, row in rows}
+    target_row = _feature_row(player, summary)
+    candidate_rows = [
+        _feature_row(candidate, row) for candidate, row in rows if candidate.id != player.id
+    ]
+
+    settings = get_settings()
+    results = rank_similar_players(
+        target_row,
+        candidate_rows,
+        minimum_games=settings.similarity_minimum_games,
+        minimum_minutes_per_game=settings.similarity_minimum_minutes_per_game,
+        same_position_only=same_position_only,
+        limit=limit,
+    )
+
+    players: list[SimilarPlayerResponse] = []
+    for result in results:
+        candidate, candidate_summary = candidate_index[result.player_id]
+        players.append(
             SimilarPlayerResponse(
                 player=_player_list_item(candidate),
                 summary=_summary_response(candidate, candidate_summary),
-                similarity_score=round(score, 1),
-                shared_position=shared_position,
+                similarity_score=result.similarity_score,
+                shared_position=bool(
+                    player.position
+                    and candidate.position
+                    and player.position.casefold() == candidate.position.casefold()
+                ),
                 minutes_difference=_absolute_difference(
                     _float(summary.minutes_per_game),
                     _float(candidate_summary.minutes_per_game),
                 ),
+                shared_strengths=result.shared_strengths,
+                largest_differences=result.largest_differences,
+                feature_comparisons=[
+                    SimilarFeatureComparison(
+                        feature=comparison.feature,
+                        label=comparison.label,
+                        unit=comparison.unit,
+                        player_value=comparison.player_value,
+                        candidate_value=comparison.candidate_value,
+                        difference=comparison.difference,
+                    )
+                    for comparison in result.feature_comparisons
+                ],
             )
-            for score, shared_position, _, candidate, candidate_summary in candidates[:limit]
-        ],
+        )
+
+    return SimilarPlayersResponse(
+        player_id=player.id,
+        nba_player_id=player.nba_player_id,
+        season=season,
+        players=players,
+        meta=_api_meta(session, season),
+    )
+
+
+def _feature_row(player: Player, summary: PlayerSeasonSummary) -> PlayerFeatureRow:
+    return PlayerFeatureRow(
+        player_id=player.id,
+        games_played=summary.games_played,
+        minutes_per_game=_float(summary.minutes_per_game),
+        position=player.position,
+        values=compute_feature_values(
+            minutes_per_game=_float(summary.minutes_per_game),
+            points_per_36=_float(summary.points_per_36),
+            rebounds_per_36=_float(summary.rebounds_per_36),
+            assists_per_36=_float(summary.assists_per_36),
+            turnovers_per_36=_float(summary.turnovers_per_36),
+            steals_per_game=_float(summary.steals_per_game),
+            blocks_per_game=_float(summary.blocks_per_game),
+            true_shooting_percentage=_float(summary.true_shooting_percentage),
+            usage_rate=_float(summary.usage_rate),
+        ),
     )
 
 
@@ -455,8 +561,9 @@ async def compare_players(
     session: Annotated[Session, Depends(get_db_session)],
     player_a: Annotated[int, Query(gt=0, description="Internal or NBA ID for player A.")],
     player_b: Annotated[int, Query(gt=0, description="Internal or NBA ID for player B.")],
-    season: Annotated[str, Query(min_length=4, max_length=16)],
+    season: Annotated[str | None, Query(min_length=4, max_length=16)] = None,
 ) -> CompareResponse:
+    season = _resolve_season_or_400(season)
     if player_a == player_b:
         raise HTTPException(
             status_code=422,
@@ -504,6 +611,7 @@ async def compare_players(
             first_subject.recent_10,
             second_subject.recent_10,
         ),
+        meta=_api_meta(session, season),
     )
 
 
@@ -545,7 +653,185 @@ async def player_report(
             trends=trends,
             benchmarks=benchmarks,
         ),
+        meta=_api_meta(session, season),
     )
+
+
+@router.get("/teams/{team_id}", response_model=TeamDetailResponse, summary="Get team by season")
+async def team_detail(
+    team_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> TeamDetailResponse:
+    selected = _resolve_season_or_400(season)
+    team = _get_team_or_404(session, team_id)
+    _ensure_team_has_season(session, team, selected)
+    summary = _get_team_summary(session, team.id, selected)
+    return TeamDetailResponse(
+        team=_team_response(team),
+        summary=_team_summary_response(session, team, summary, selected) if summary else None,
+        meta=_api_meta(session, selected),
+    )
+
+
+@router.get("/teams/{team_id}/roster", response_model=TeamRosterResponse, summary="Get team roster")
+async def team_roster(
+    team_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> TeamRosterResponse:
+    selected = _resolve_season_or_400(season)
+    team = _get_team_or_404(session, team_id)
+    _ensure_team_has_season(session, team, selected)
+    rows = session.execute(
+        select(RosterMembership, Player)
+        .join(Player, RosterMembership.player_id == Player.id)
+        .where(RosterMembership.team_id == team.id, RosterMembership.season == selected)
+        .order_by(RosterMembership.depth_order.nullslast(), Player.full_name)
+    ).all()
+    return TeamRosterResponse(
+        team=_team_response(team),
+        members=[
+            RosterMemberResponse(
+                player=_player_list_item_for_season(session, player, selected),
+                jersey_number=membership.jersey_number,
+                position=membership.position,
+                roster_status=membership.roster_status,
+                is_projected_starter=membership.is_projected_starter,
+                depth_order=membership.depth_order,
+            )
+            for membership, player in rows
+        ],
+        meta=_api_meta(session, selected),
+    )
+
+
+@router.get(
+    "/teams/{team_id}/summary",
+    response_model=TeamSeasonSummaryApiResponse,
+    summary="Get team season summary",
+)
+async def team_summary(
+    team_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> TeamSeasonSummaryApiResponse:
+    selected = _resolve_season_or_400(season)
+    team = _get_team_or_404(session, team_id)
+    summary = _get_team_summary(session, team.id, selected)
+    if summary is None:
+        _raise_entity_season_not_found("Team", team.name, selected)
+    return _team_summary_response(session, team, summary, selected)
+
+
+@router.get("/standings", response_model=StandingsResponse, summary="Get standings by season")
+async def standings(
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> StandingsResponse:
+    selected = _resolve_season_or_400(season)
+    rows = session.execute(
+        select(StandingsSnapshot, Team)
+        .join(Team, StandingsSnapshot.team_id == Team.id)
+        .where(StandingsSnapshot.season == selected)
+        .order_by(StandingsSnapshot.conference, StandingsSnapshot.rank)
+    ).all()
+    return StandingsResponse(
+        standings=[
+            StandingRowResponse(
+                team=_team_response(team),
+                conference=row.conference,
+                rank=row.rank,
+                wins=row.wins,
+                losses=row.losses,
+                win_pct=float(row.win_pct),
+                games_back=_float(row.games_back),
+                conference_record=row.conference_record,
+                division_record=row.division_record,
+                home_record=row.home_record,
+                away_record=row.away_record,
+                last_10=row.last_10,
+                streak=row.streak,
+            )
+            for row, team in rows
+        ],
+        meta=_api_meta(session, selected),
+    )
+
+
+@router.get("/players/{player_id}/summary", response_model=PlayerSeasonSummaryResponse)
+async def player_summary_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> PlayerSeasonSummaryResponse:
+    return await player_summary(player_id, _resolve_season_or_400(season), session)
+
+
+@router.get("/players/{player_id}/games", response_model=PaginatedGameLogsResponse)
+async def player_games_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> PaginatedGameLogsResponse:
+    return await player_games(
+        player_id, _resolve_season_or_400(season), session, limit, offset, None, None, None, "asc"
+    )
+
+
+@router.get("/players/{player_id}/trends", response_model=TrendsResponse)
+async def player_trends_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> TrendsResponse:
+    return await player_trends(player_id, _resolve_season_or_400(season), session)
+
+
+@router.get("/players/{player_id}/splits", response_model=PlayerSplitsResponse)
+async def player_splits_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> PlayerSplitsResponse:
+    return await player_splits(player_id, _resolve_season_or_400(season), session)
+
+
+@router.get("/players/{player_id}/benchmarks", response_model=BenchmarksResponse)
+async def player_benchmarks_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> BenchmarksResponse:
+    return await player_benchmarks(player_id, _resolve_season_or_400(season), session)
+
+
+@router.get("/similar-players", response_model=SimilarPlayersResponse)
+async def similar_players_query(
+    session: Annotated[Session, Depends(get_db_session)],
+    player_id: Annotated[int, Query(gt=0)],
+    season: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=10)] = 5,
+    same_position_only: Annotated[bool, Query()] = False,
+) -> SimilarPlayersResponse:
+    return await similar_players(
+        player_id,
+        _resolve_season_or_400(season),
+        session,
+        limit,
+        same_position_only=same_position_only,
+    )
+
+
+@router.get("/reports/player/{player_id}", response_model=PlayerReportResponse)
+async def player_report_query(
+    player_id: Annotated[int, Path(gt=0)],
+    session: Annotated[Session, Depends(get_db_session)],
+    season: Annotated[str | None, Query()] = None,
+) -> PlayerReportResponse:
+    return await player_report(player_id, _resolve_season_or_400(season), session)
 
 
 def _compare_subject_response(
@@ -990,6 +1276,7 @@ def _get_player_or_404(session: Session, player_identifier: int) -> Player:
 
 
 def _get_summary_or_404(session: Session, player_id: int, season: str) -> PlayerSeasonSummary:
+    season = _resolve_season_or_400(season)
     summary = _get_summary(session, player_id, season)
     if summary is None:
         _raise_not_found("season_summary", f"player={player_id}, season={season}")
@@ -1010,6 +1297,7 @@ def _get_summary(
 
 
 def _ensure_season_exists_for_player(session: Session, player_id: int, season: str) -> None:
+    season = _resolve_season_or_400(season)
     exists = session.scalar(
         select(PlayerGameStat.id)
         .where(PlayerGameStat.player_id == player_id, PlayerGameStat.season == season)
@@ -1020,6 +1308,7 @@ def _ensure_season_exists_for_player(session: Session, player_id: int, season: s
 
 
 def _game_logs_for_player(session: Session, player_id: int, season: str) -> list[GameLog]:
+    season = _resolve_season_or_400(season)
     rows = session.execute(
         select(PlayerGameStat, Game, Player)
         .join(Game, PlayerGameStat.game_id == Game.id)
@@ -1222,55 +1511,6 @@ def _benchmarks_response(player: Player, summary: PlayerSeasonSummary) -> Benchm
     )
 
 
-def _similarity_metric_scales(
-    summaries: list[PlayerSeasonSummary],
-) -> dict[str, tuple[float, float]]:
-    scales: dict[str, tuple[float, float]] = {}
-    for metric in SIMILARITY_METRICS:
-        values = [
-            value
-            for summary in summaries
-            if (value := _summary_metric_value(summary, metric)) is not None
-        ]
-        if len(values) < 2:
-            continue
-        mean = sum(values) / len(values)
-        variance = sum((value - mean) ** 2 for value in values) / len(values)
-        scale = sqrt(variance)
-        if scale > 0:
-            scales[metric] = (mean, scale)
-    return scales
-
-
-def _similarity_score(
-    target: PlayerSeasonSummary,
-    candidate: PlayerSeasonSummary,
-    metric_scales: dict[str, tuple[float, float]],
-) -> float | None:
-    squared_distances: list[float] = []
-    for metric, (_, scale) in metric_scales.items():
-        target_value = _summary_metric_value(target, metric)
-        candidate_value = _summary_metric_value(candidate, metric)
-        if target_value is None or candidate_value is None:
-            continue
-        squared_distances.append(((target_value - candidate_value) / scale) ** 2)
-
-    if not squared_distances:
-        return None
-
-    normalized_distance = sqrt(sum(squared_distances) / len(squared_distances))
-    return 100 / (1 + normalized_distance)
-
-
-def _summary_metric_value(summary: PlayerSeasonSummary, metric: str) -> float | None:
-    value = getattr(summary, metric)
-    if isinstance(value, Decimal):
-        return float(value)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
-
-
 def _absolute_difference(left: float | None, right: float | None) -> float | None:
     if left is None or right is None:
         return None
@@ -1304,6 +1544,173 @@ def _format_percent(value: float | None, digits: int = 1) -> str:
 
 def _float(value: Decimal | None) -> float | None:
     return None if value is None else float(value)
+
+
+def _resolve_season_or_400(season: str | None) -> str:
+    try:
+        return validate_season(season)
+    except ValueError as exc:
+        available = ", ".join(get_available_seasons())
+        requested = season or get_default_season()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Season {requested} is not available. Available seasons: {available}.",
+        ) from exc
+
+
+def _player_season_exists(season: str) -> Any:
+    return or_(
+        exists().where(
+            PlayerSeasonSummary.player_id == Player.id,
+            PlayerSeasonSummary.season == season,
+        ),
+        exists().where(
+            PlayerGameStat.player_id == Player.id,
+            PlayerGameStat.season == season,
+        ),
+        exists().where(
+            RosterMembership.player_id == Player.id,
+            RosterMembership.season == season,
+        ),
+    )
+
+
+def _teams_for_season(session: Session, season: str) -> list[Team]:
+    condition = or_(
+        exists().where(TeamSeasonSummary.team_id == Team.id, TeamSeasonSummary.season == season),
+        exists().where(StandingsSnapshot.team_id == Team.id, StandingsSnapshot.season == season),
+        exists().where(RosterMembership.team_id == Team.id, RosterMembership.season == season),
+        exists().where(Game.home_team_id == Team.id, Game.season == season),
+        exists().where(Game.away_team_id == Team.id, Game.season == season),
+    )
+    return list(session.scalars(select(Team).where(condition).order_by(Team.abbreviation)))
+
+
+def _player_list_item_for_season(session: Session, player: Player, season: str) -> PlayerListItem:
+    membership = _season_membership(session, player.id, season)
+    return _player_list_item(player).model_copy(
+        update={
+            "team": _season_team_response(session, player.id, season),
+            "position": membership.position
+            if membership and membership.position
+            else player.position,
+            "jersey_number": (
+                membership.jersey_number
+                if membership and membership.jersey_number
+                else player.jersey_number
+            ),
+        }
+    )
+
+
+def _season_membership(session: Session, player_id: int, season: str) -> RosterMembership | None:
+    return session.scalar(
+        select(RosterMembership)
+        .where(
+            RosterMembership.player_id == player_id,
+            RosterMembership.season == season,
+        )
+        .order_by(RosterMembership.start_date.desc().nullslast(), RosterMembership.id.desc())
+        .limit(1)
+    )
+
+
+def _season_team_response(session: Session, player_id: int, season: str) -> TeamResponse | None:
+    team = session.scalar(
+        select(Team)
+        .join(RosterMembership, RosterMembership.team_id == Team.id)
+        .where(
+            RosterMembership.player_id == player_id,
+            RosterMembership.season == season,
+        )
+        .order_by(RosterMembership.start_date.desc().nullslast(), RosterMembership.id.desc())
+        .limit(1)
+    )
+    if team is None:
+        team = session.scalar(
+            select(Team)
+            .join(PlayerSeasonSummary, PlayerSeasonSummary.team_id == Team.id)
+            .where(
+                PlayerSeasonSummary.player_id == player_id,
+                PlayerSeasonSummary.season == season,
+            )
+            .limit(1)
+        )
+    return _team_response(team) if team else None
+
+
+def _get_team_or_404(session: Session, identifier: int) -> Team:
+    team = session.scalar(
+        select(Team).where(or_(Team.id == identifier, Team.nba_team_id == identifier))
+    )
+    if team is None:
+        _raise_not_found("team", str(identifier))
+    return team
+
+
+def _ensure_player_has_season(session: Session, player: Player, season: str) -> None:
+    if not player_has_season(session, player.id, season):
+        _raise_entity_season_not_found("Player", player.full_name, season)
+
+
+def _ensure_team_has_season(session: Session, team: Team, season: str) -> None:
+    if not team_has_season(session, team.id, season):
+        _raise_entity_season_not_found("Team", team.name, season)
+
+
+def _raise_entity_season_not_found(entity: str, name: str, season: str) -> NoReturn:
+    raise HTTPException(
+        status_code=404,
+        detail=f"{entity} {name} exists, but has no stored data for season {season}.",
+    )
+
+
+def _get_team_summary(session: Session, team_id: int, season: str) -> TeamSeasonSummary | None:
+    return session.scalar(
+        select(TeamSeasonSummary).where(
+            TeamSeasonSummary.team_id == team_id, TeamSeasonSummary.season == season
+        )
+    )
+
+
+def _team_summary_response(
+    session: Session,
+    team: Team,
+    summary: TeamSeasonSummary,
+    season: str,
+) -> TeamSeasonSummaryApiResponse:
+    return TeamSeasonSummaryApiResponse(
+        team=_team_response(team),
+        season=season,
+        conference=summary.conference,
+        division=summary.division,
+        wins=summary.wins,
+        losses=summary.losses,
+        win_pct=_float(summary.win_pct),
+        conference_rank=summary.conference_rank,
+        division_rank=summary.division_rank,
+        points_per_game=_float(summary.points_per_game),
+        points_allowed_per_game=_float(summary.points_allowed_per_game),
+        net_rating=_float(summary.net_rating),
+        offensive_rating=_float(summary.offensive_rating),
+        defensive_rating=_float(summary.defensive_rating),
+        pace=_float(summary.pace),
+        playoff_result=summary.playoff_result,
+        meta=_api_meta(session, season),
+    )
+
+
+def _api_meta(session: Session, season: str) -> ApiMetadata:
+    freshness = session.scalar(
+        select(SyncRun.finished_at)
+        .where(
+            SyncRun.season == season,
+            SyncRun.status.in_(("completed", "completed_with_rejections")),
+        )
+        .order_by(SyncRun.finished_at.desc().nullslast(), SyncRun.id.desc())
+        .limit(1)
+    )
+    return ApiMetadata(season=season, dataFreshness=freshness, source="database")
 
 
 def _json_dict(value: dict[str, object] | None) -> dict[str, Any]:

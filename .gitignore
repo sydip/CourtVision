@@ -9,6 +9,7 @@ venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest_tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -28,8 +29,8 @@ raw_data/
 *.sqlite
 *.db
 postgres-data/
+backend/model_artifacts/
 
 # OS / editor
 .DS_Store
 Thumbs.db
-

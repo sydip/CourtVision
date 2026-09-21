@@ -7,8 +7,9 @@ import {
   getAwardPrediction,
   getStandingsPrediction,
   sendAssistantMessage,
-} from "@/lib/api/hoopsiq";
+} from "@/lib/api/courtvision";
 import type { AssistantSource, AwardPrediction, StandingsPrediction } from "@/lib/api/schemas";
+import { useSeason } from "@/lib/state/season-context";
 
 type ChatMessage = {
   id: string;
@@ -33,6 +34,8 @@ const starterQuestions = [
 const awardOptions = ["MVP", "DPOY", "MIP", "ROY", "SIXTH_MAN"] as const;
 
 export function AssistantDashboard() {
+  const { season } = useSeason();
+  const predictionEnabled = season === "2025-26";
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -87,11 +90,11 @@ export function AssistantDashboard() {
   }
 
   async function loadAward(award: string) {
+    if (!predictionEnabled) return;
     setIsLoadingInsight(true);
     setError(undefined);
     try {
-      const targetSeason = award === "ROY" ? "2026-27" : "2025-26";
-      setInsight({ kind: "award", value: await getAwardPrediction(award, targetSeason, 5) });
+      setInsight({ kind: "award", value: await getAwardPrediction(award, season, 5) });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Projection unavailable.");
     } finally {
@@ -100,12 +103,13 @@ export function AssistantDashboard() {
   }
 
   async function loadStandings(conference: "East" | "West") {
+    if (!predictionEnabled) return;
     setIsLoadingInsight(true);
     setError(undefined);
     try {
       setInsight({
         kind: "standings",
-        value: await getStandingsPrediction("2025-26", conference),
+        value: await getStandingsPrediction(season, conference),
       });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Projection unavailable.");
@@ -136,33 +140,42 @@ export function AssistantDashboard() {
 
       <div className="assistant-layout">
         <aside className="assistant-rail" aria-label="Prediction shortcuts">
-          <section>
-            <span className="assistant-section-label">Award models</span>
-            <div className="assistant-award-list">
-              {awardOptions.map((award) => (
-                <button
-                  disabled={isLoadingInsight}
-                  key={award}
-                  onClick={() => void loadAward(award)}
-                  type="button"
-                >
-                  <span>{award.replace("_", " ")}</span>
-                  <i aria-hidden="true">›</i>
-                </button>
-              ))}
-            </div>
-          </section>
-          <section>
-            <span className="assistant-section-label">Standings</span>
-            <div className="assistant-conference-actions">
-              <button onClick={() => void loadStandings("East")} type="button">
-                Eastern
-              </button>
-              <button onClick={() => void loadStandings("West")} type="button">
-                Western
-              </button>
-            </div>
-          </section>
+          {!predictionEnabled ? (
+            <p className="assistant-prediction-notice">
+              Jordan prediction mode is only available for the 2025–26 season.
+            </p>
+          ) : null}
+          {predictionEnabled ? (
+            <>
+              <section>
+                <span className="assistant-section-label">Award models</span>
+                <div className="assistant-award-list">
+                  {awardOptions.map((award) => (
+                    <button
+                      disabled={isLoadingInsight}
+                      key={award}
+                      onClick={() => void loadAward(award)}
+                      type="button"
+                    >
+                      <span>{award.replace("_", " ")}</span>
+                      <i aria-hidden="true">›</i>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <span className="assistant-section-label">Standings</span>
+                <div className="assistant-conference-actions">
+                  <button onClick={() => void loadStandings("East")} type="button">
+                    Eastern
+                  </button>
+                  <button onClick={() => void loadStandings("West")} type="button">
+                    Western
+                  </button>
+                </div>
+              </section>
+            </>
+          ) : null}
           <div className="assistant-grounding-note">
             <span aria-hidden="true">✓</span>
             <div>
@@ -180,7 +193,7 @@ export function AssistantDashboard() {
               </span>
               <div>
                 <strong>Jordan</strong>
-                <em>HoopsIQ analysis agent</em>
+                <em>CourtVision analysis agent</em>
               </div>
             </div>
             <span className="assistant-mode">Structured data only</span>
@@ -337,6 +350,7 @@ function InsightPanel({ insight, isLoading }: { insight: ActiveInsight; isLoadin
         </div>
         {leader ? <AttributionList attributions={leader.feature_attributions.slice(0, 4)} /> : null}
         <p className="assistant-methodology">{insight.value.methodology}</p>
+        <p className="assistant-methodology">{insight.value.disclaimer}</p>
       </>
     );
   }
@@ -363,6 +377,7 @@ function InsightPanel({ insight, isLoading }: { insight: ActiveInsight; isLoadin
         ))}
       </div>
       <p className="assistant-methodology">{insight.value.methodology}</p>
+      <p className="assistant-methodology">{insight.value.disclaimer}</p>
     </>
   );
 }

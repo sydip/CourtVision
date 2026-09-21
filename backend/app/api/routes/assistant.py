@@ -5,19 +5,39 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
-from app.analytics.awards_predictor import predict_awards
 from app.analytics.backtest import run_backtest
-from app.analytics.standings_predictor import predict_standings
 from app.assistant.chat import answer_message
+from app.assistant.guardrails import JORDAN_PREDICTION_SEASON
 from app.assistant.schemas import (
     AssistantChatRequest,
     AssistantChatResponse,
+    AssistantQueryRequest,
+    AssistantQueryResponse,
     PredictionLogResponse,
 )
-from app.assistant.tools import list_capabilities, list_predictions
+from app.assistant.service import answer_query
+from app.assistant.tools import (
+    list_capabilities,
+    list_predictions,
+    predict_award,
+    predict_league_standings,
+)
 from app.db.session import get_db_session
 
 router = APIRouter(tags=["intelligence assistant"])
+
+
+@router.post(
+    "/assistant/query",
+    response_model=AssistantQueryResponse,
+    summary="Query stored CourtVision data",
+    description="Classifies and executes safe repository-backed factual retrievals.",
+)
+async def assistant_query(
+    request: AssistantQueryRequest,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> dict[str, Any]:
+    return answer_query(session, request.question, request.season)
 
 
 @router.post(
@@ -60,10 +80,11 @@ async def award_prediction(
     season: Annotated[str, Query(min_length=4, max_length=16)] = "2025-26",
     limit: Annotated[int, Query(ge=1, le=20)] = 10,
 ) -> dict[str, Any]:
+    _require_jordan_season(season)
     try:
-        result = predict_awards(session, season, award_type, limit=limit)
+        result = predict_award(session, award_type, season, limit=limit)
         session.commit()
-        return result.as_dict()
+        return result
     except ValueError as exc:
         session.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -78,10 +99,11 @@ async def standings_prediction(
     season: Annotated[str, Query(min_length=4, max_length=16)] = "2025-26",
     conference: Annotated[str | None, Query(max_length=16)] = None,
 ) -> dict[str, Any]:
+    _require_jordan_season(season)
     try:
-        result = predict_standings(session, season, conference)
+        result = predict_league_standings(session, season, conference)
         session.commit()
-        return result.as_dict()
+        return result
     except ValueError as exc:
         session.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -107,4 +129,15 @@ async def prediction_backtest(
     season: Annotated[str, Path(min_length=4, max_length=16)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, Any]:
-    return run_backtest(session, season).as_dict()
+    return {
+        **run_backtest(session, season).as_dict(),
+        "disclaimer": "Historical model evaluation, not a prediction or betting recommendation.",
+    }
+
+
+def _require_jordan_season(season: str) -> None:
+    if season != JORDAN_PREDICTION_SEASON:
+        raise HTTPException(
+            status_code=403,
+            detail="Jordan prediction mode is only available for the 2025-26 season.",
+        )

@@ -7,29 +7,73 @@ import { PlayerNumberMark } from "@/components/player-number-mark";
 import { useDataStatus } from "@/lib/api/hooks";
 import type { DataStatus, PlayerListItem, Team } from "@/lib/api/schemas";
 import { formatTimeStamp, pluralize } from "@/lib/format";
+import { useSeason } from "@/lib/state/season-context";
 
-const primaryCards = [
+/* The six database entry points. Every card resolves to a section that
+   actually exists in this app - no placeholder destinations. */
+const databaseCards = [
+  {
+    title: "Players",
+    description: "Search and explore player profiles and information.",
+    href: "/players",
+    glyph: "player",
+  },
+  {
+    title: "Teams",
+    description: "Browse teams, rosters, and organization history.",
+    href: "/rosters",
+    glyph: "team",
+  },
   {
     title: "Standings",
-    description: "View the latest NBA standings, including conference rankings and team records.",
-    action: "View Standings",
-    href: "/",
-    tone: "blue",
+    description: "Conference tables, records, streaks, and splits.",
+    href: "/standings",
+    glyph: "table",
   },
   {
-    title: "Compare Players",
-    description:
-      "Compare any two players side by side across advanced stats, trends, and performance.",
-    action: "Compare Players",
-    href: "/",
-    tone: "purple",
+    title: "Playoffs",
+    description: "View playoff brackets, series, and history.",
+    href: "/playoffs",
+    glyph: "trophy",
   },
   {
-    title: "Rosters",
-    description: "Browse current NBA rosters for all teams and explore player details.",
-    action: "View Rosters",
+    title: "Draft",
+    description: "Explore draft classes, picks, and prospects.",
+    href: "/draft",
+    glyph: "draft",
+  },
+  {
+    title: "Compare",
+    description: "Measure any two players across advanced stats.",
+    href: "/compare",
+    glyph: "compare",
+  },
+] as const;
+
+const categoryCards = [
+  {
+    title: "Regular Season",
+    description: "Explore all regular season records and results.",
+    href: "/standings",
+    tone: "court",
+  },
+  {
+    title: "Playoff History",
+    description: "Relive past playoff runs and championships.",
+    href: "/playoffs",
+    tone: "banner",
+  },
+  {
+    title: "NBA Draft",
+    description: "Browse draft history and future prospects.",
+    href: "/draft",
+    tone: "draft",
+  },
+  {
+    title: "Team History",
+    description: "Discover team records, trades, and timelines.",
     href: "/rosters",
-    tone: "green",
+    tone: "legacy",
   },
 ] as const;
 
@@ -40,7 +84,8 @@ type HomeDashboardViewProps = {
 };
 
 export function HomeDashboard() {
-  const dataStatusQuery = useDataStatus();
+  const { season } = useSeason();
+  const dataStatusQuery = useDataStatus(season);
 
   return (
     <HomeDashboardView
@@ -66,115 +111,89 @@ export function HomeDashboardView({
     : hasDataStatusError
       ? "Data status unavailable"
       : `Updated ${freshness}`;
-  const reliabilityText = playerCount
-    ? `Regular data updates for ${playerCount}.`
-    : "Regular data updates for accurate insights.";
+  const seasonLabel = dataStatus?.season ?? dataStatus?.current_season ?? "2025-26";
 
   return (
-    <AppShell active="Home" variant="home">
+    <AppShell active="Home" variant="topbar">
       <div className="home-landing">
-        <section className="home-welcome-hero">
-          <div className="nba-logo-frame">
-            <BasketballIcon />
+        <section className="home-hero" aria-label="Welcome">
+          <div className="home-hero-art" aria-hidden="true">
+            <CourtGraphic />
+            <span className="home-hero-mark">
+              <BasketballIcon />
+            </span>
           </div>
 
-          <div className="home-welcome-copy">
+          <div className="home-hero-body">
+            <span className="home-hero-eyebrow">{seasonLabel} Season</span>
             <h1>
-              Welcome to <span>CourtVision</span>
+              Explore. Analyze. <span>Elevate.</span>
             </h1>
-            <strong>Your all-in-one NBA analytics platform.</strong>
-            <p>
-              Explore in-depth player insights, compare performance, track standings, and browse
-              rosters - all powered by data.
-            </p>
+            <p>Your all-in-one NBA database for in-depth research and analysis.</p>
+            <a className="home-hero-cta" href="/players">
+              Explore Players
+              <i aria-hidden="true">&gt;</i>
+            </a>
+
+            <dl className="home-hero-stats">
+              <HeroStat label="Season" value={seasonLabel} />
+              <HeroStat label="Players" value={playerCount ?? "—"} />
+              <HeroStat label="Sync" value={syncText} tone={hasDataStatusError ? "warn" : "ok"} />
+            </dl>
           </div>
         </section>
 
-        <section className="home-primary-card-grid" aria-label="Primary dashboard actions">
-          {primaryCards.map((card) => (
-            <HomePrimaryCard
-              action={card.action}
-              description={card.description}
-              href={card.href}
-              key={card.title}
-              title={card.title}
-              tone={card.tone}
-            />
-          ))}
+        <section className="home-section" aria-labelledby="home-explore-heading">
+          <h2 className="home-section-heading" id="home-explore-heading">
+            Explore the Database
+          </h2>
+          <div className="home-database-grid">
+            {databaseCards.map((card) => (
+              <a className="home-database-card" href={card.href} key={card.title}>
+                <span className="home-database-art" aria-hidden="true">
+                  <span className={`home-database-glyph ${card.glyph}`}>
+                    <i />
+                  </span>
+                </span>
+                <strong>{card.title}</strong>
+                <em>{card.description}</em>
+              </a>
+            ))}
+          </div>
         </section>
 
-        <section className="home-insight-strip" aria-label="Platform highlights">
-          <InsightItem
-            description="Advanced metrics and meaningful analytics."
-            title="Data-Driven Insights"
-            tone="blue"
-          />
-          <InsightItem description={reliabilityText} title="Reliable & Updated" tone="shield" />
-          <InsightItem
-            description="Track recent form and long-term player performance."
-            title="Performance Trends"
-            tone="trend"
-          />
-          <InsightItem
-            description={syncText}
-            title="Built for Fans"
-            tone={hasDataStatusError ? "warning" : "star"}
-          />
+        <section className="home-section" aria-labelledby="home-category-heading">
+          <h2 className="home-section-heading" id="home-category-heading">
+            Browse by Category
+          </h2>
+          <div className="home-category-grid">
+            {categoryCards.map((card) => (
+              <a className={`home-category-card ${card.tone}`} href={card.href} key={card.title}>
+                <span className="home-category-art" aria-hidden="true" />
+                <span className="home-category-body">
+                  <span>
+                    <strong>{card.title}</strong>
+                    <em>{card.description}</em>
+                  </span>
+                  <i className="home-category-arrow" aria-hidden="true">
+                    &rarr;
+                  </i>
+                </span>
+              </a>
+            ))}
+          </div>
         </section>
       </div>
     </AppShell>
   );
 }
 
-function HomePrimaryCard({
-  action,
-  description,
-  href,
-  title,
-  tone,
-}: {
-  action: string;
-  description: string;
-  href: string;
-  title: string;
-  tone: "blue" | "green" | "purple";
-}) {
+function HeroStat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
   return (
-    <a className={`home-primary-card ${tone}`} href={href}>
-      <span className={`home-primary-icon ${tone}`} aria-hidden="true">
-        <i />
-      </span>
-      <span className="home-primary-copy">
-        <strong>{title}</strong>
-        <em>{description}</em>
-      </span>
-      <span className="home-primary-button">
-        {action}
-        <i aria-hidden="true">&gt;</i>
-      </span>
-    </a>
-  );
-}
-
-function InsightItem({
-  description,
-  title,
-  tone,
-}: {
-  description: string;
-  title: string;
-  tone: "blue" | "shield" | "star" | "trend" | "warning";
-}) {
-  return (
-    <article className="home-insight-item">
-      <span className={`home-insight-icon ${tone}`} aria-hidden="true">
-        <i />
-      </span>
-      <span>
-        <strong>{title}</strong>
-        <em>{description}</em>
-      </span>
-    </article>
+    <div className={`home-hero-stat${tone ? ` ${tone}` : ""}`}>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
   );
 }
 
@@ -189,6 +208,29 @@ export function PlayerPortrait({
     <div className={`player-portrait ${size}`}>
       <PlayerNumberMark player={player} />
     </div>
+  );
+}
+
+/* Half-court line work behind the hero. Drawn rather than photographed so the
+   page ships no external image assets and stays on the app palette. */
+function CourtGraphic() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="home-court-graphic"
+      preserveAspectRatio="xMidYMid slice"
+      viewBox="0 0 400 220"
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.55">
+        <rect x="8" y="8" width="384" height="204" rx="2" />
+        <line x1="200" y1="8" x2="200" y2="212" />
+        <circle cx="200" cy="110" r="34" />
+        <rect x="8" y="62" width="70" height="96" />
+        <rect x="322" y="62" width="70" height="96" />
+        <path d="M78 62 A54 54 0 0 1 78 158" />
+        <path d="M322 62 A54 54 0 0 0 322 158" />
+      </g>
+    </svg>
   );
 }
 

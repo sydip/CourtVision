@@ -20,6 +20,7 @@ BENCHMARK_METRICS: dict[str, SummaryMetric] = {
     "true_shooting_percentage": lambda summary: summary.true_shooting_percentage,
     "field_goal_percentage": lambda summary: summary.field_goal_percentage,
     "three_point_percentage": lambda summary: summary.three_point_percentage,
+    "effective_field_goal_percentage": lambda summary: summary.effective_field_goal_percentage,
     "steals_per_game": lambda summary: summary.steals_per_game,
     "blocks_per_game": lambda summary: summary.blocks_per_game,
     "turnovers_per_game": lambda summary: summary.turnovers_per_game,

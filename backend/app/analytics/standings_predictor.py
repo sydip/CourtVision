@@ -7,13 +7,15 @@ from sqlalchemy.orm import Session
 
 from app.analytics.features import load_team_projection_features, z_scores
 from app.analytics.prediction_types import (
+    JORDAN_PREDICTION_DISCLAIMER,
+    JORDAN_PREDICTION_SEASON,
     ProjectedTeam,
     StandingsPredictionResult,
     TeamProjectionFeatures,
 )
 from app.models import Prediction
 
-STANDINGS_MODEL_VERSION: Final = "hoopsiq-standings-heuristic-v1"
+STANDINGS_MODEL_VERSION: Final = "courtvision-standings-heuristic-v1"
 
 
 def predict_standings(
@@ -22,7 +24,13 @@ def predict_standings(
     conference: str | None = None,
     *,
     persist: bool = True,
+    _historical_backtest: bool = False,
 ) -> StandingsPredictionResult:
+    historical_evaluation = _historical_backtest and not persist
+    if target_season != JORDAN_PREDICTION_SEASON and not historical_evaluation:
+        raise ValueError(
+            "Jordan prediction mode is only available for the 2025-26 season."
+        )
     source_season, features = load_team_projection_features(session, target_season)
     result = score_standings(
         features,
@@ -153,6 +161,7 @@ def score_standings(
             "true shooting, continuity, and available injury context. Projected point "
             "differential is mapped to wins; results are estimates, not guarantees."
         ),
+        disclaimer=JORDAN_PREDICTION_DISCLAIMER,
     )
 
 

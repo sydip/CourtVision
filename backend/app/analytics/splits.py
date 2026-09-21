@@ -48,6 +48,13 @@ def calculate_home_away_splits(game_logs: list[GameLog]) -> dict[str, SplitSumma
     return {location: _summarize_split(logs) for location, logs in grouped.items()}
 
 
+def calculate_rest_splits(game_logs: list[GameLog]) -> dict[str, SplitSummary]:
+    grouped: dict[str, list[GameLog]] = defaultdict(list)
+    for log in add_rest_days(game_logs):
+        grouped[categorize_rest_days(log.days_since_previous_game)].append(log)
+    return {category: _summarize_split(logs) for category, logs in grouped.items()}
+
+
 def _summarize_split(game_logs: list[GameLog]) -> SplitSummary:
     points = sum(log.points for log in game_logs)
     field_goal_attempts = sum(log.field_goal_attempts for log in game_logs)

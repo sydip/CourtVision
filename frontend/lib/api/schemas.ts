@@ -16,6 +16,15 @@ export const pageMetaSchema = z.object({
   total: z.number(),
   next_offset: z.number().nullable(),
   previous_offset: z.number().nullable(),
+  season: z.string().optional(),
+  dataFreshness: z.string().nullable().optional(),
+  source: z.string().optional(),
+});
+
+export const seasonMetadataSchema = z.object({
+  season: z.string(),
+  dataFreshness: z.string().nullable(),
+  source: z.literal("database"),
 });
 
 export const teamSchema = z.object({
@@ -30,6 +39,7 @@ export const teamSchema = z.object({
 
 export const teamsResponseSchema = z.object({
   teams: z.array(teamSchema),
+  meta: seasonMetadataSchema.optional(),
 });
 
 export const draftPickSchema = z.object({
@@ -147,6 +157,18 @@ export const playersResponseSchema = z.object({
 
 export const seasonsResponseSchema = z.object({
   seasons: z.array(z.string()),
+  data: z
+    .array(
+      z.object({
+        season: z.string(),
+        displayName: z.string(),
+        isCompleted: z.boolean(),
+        isCurrent: z.boolean(),
+        supportsPredictions: z.boolean(),
+        supportsJordanPredictions: z.boolean(),
+      }),
+    )
+    .optional(),
 });
 
 export const syncRunStatusSchema = z.object({
@@ -166,8 +188,36 @@ export const dataStatusSchema = z.object({
   player_count: z.number(),
   game_count: z.number(),
   player_game_record_count: z.number(),
+  season: z.string().optional(),
+  players: z.number().optional(),
+  teams: z.number().optional(),
+  games: z.number().optional(),
+  playerGameStats: z.number().optional(),
+  teamGameStats: z.number().optional(),
+  standingsAvailable: z.boolean().optional(),
   last_successful_sync: syncRunStatusSchema.nullable(),
   last_failed_sync: syncRunStatusSchema.nullable(),
+});
+
+export const standingsResponseSchema = z.object({
+  standings: z.array(
+    z.object({
+      team: teamSchema,
+      conference: z.string(),
+      rank: z.number(),
+      wins: z.number(),
+      losses: z.number(),
+      win_pct: z.number(),
+      games_back: z.number().nullable(),
+      conference_record: z.string().nullable(),
+      division_record: z.string().nullable(),
+      home_record: z.string().nullable(),
+      away_record: z.string().nullable(),
+      last_10: z.string().nullable(),
+      streak: z.string().nullable(),
+    }),
+  ),
+  meta: seasonMetadataSchema,
 });
 
 export const playerSeasonSummarySchema = z.object({
@@ -268,12 +318,24 @@ export const benchmarksResponseSchema = z.object({
   analytics_warnings: z.array(z.record(z.string(), z.unknown())),
 });
 
+export const similarFeatureComparisonSchema = z.object({
+  feature: z.string(),
+  label: z.string(),
+  unit: z.string(),
+  player_value: z.number().nullable(),
+  candidate_value: z.number().nullable(),
+  difference: z.number().nullable(),
+});
+
 export const similarPlayerSchema = z.object({
   player: playerListItemSchema,
   summary: playerSeasonSummarySchema,
   similarity_score: z.number(),
   shared_position: z.boolean(),
   minutes_difference: z.number().nullable(),
+  shared_strengths: z.array(z.string()).default([]),
+  largest_differences: z.array(z.string()).default([]),
+  feature_comparisons: z.array(similarFeatureComparisonSchema).default([]),
 });
 
 export const similarPlayersResponseSchema = z.object({
@@ -385,6 +447,84 @@ export const assistantChatResponseSchema = z.object({
   data: z.record(z.string(), z.unknown()).nullable(),
 });
 
+export const assistantEvidenceSchema = z.record(z.string(), z.unknown());
+
+export const assistantQueryResponseSchema = z.object({
+  answer: z.string(),
+  intent: z.string(),
+  season: z.string(),
+  evidence: z.array(assistantEvidenceSchema),
+  requiresClarification: z.boolean(),
+});
+
+export const predictionAvailabilitySchema = z.object({
+  predictionSeason: z.literal("2026-27"),
+  enabled: z.boolean(),
+  supportedPredictionTypes: z.array(z.enum(["all_nba", "standings", "finals_winner"])),
+  blockedSeasons: z.array(z.string()),
+  message: z.string(),
+});
+
+const predictionModelSchema = z.object({
+  name: z.string(),
+  version: z.string(),
+  trainingSeasons: z.array(z.string()),
+});
+
+export const allNbaPredictionSchema = z.object({
+  season: z.literal("2026-27"),
+  predictionType: z.literal("all_nba"),
+  model: predictionModelSchema,
+  data: z.array(
+    z.object({
+      playerId: z.number(),
+      playerName: z.string(),
+      team: z.string().nullable(),
+      predictedRank: z.number().nullable(),
+      probability: z.number().nullable(),
+      projectedTeam: z.string().nullable(),
+      topFactors: z.array(z.string()),
+      warnings: z.array(z.string()),
+    }),
+  ),
+  disclaimer: z.string().min(1),
+});
+
+const projectedStandingSchema = z.object({
+  rank: z.number().nullable(),
+  teamId: z.number(),
+  teamName: z.string(),
+  conference: z.string().nullable().optional(),
+  predictedWins: z.number().nullable(),
+  predictedLosses: z.number().nullable(),
+  playoffProbability: z.number().nullable(),
+  confidence: z.number().nullable(),
+  topFactors: z.array(z.string()),
+});
+
+export const seasonStandingsPredictionSchema = z.object({
+  season: z.literal("2026-27"),
+  predictionType: z.literal("standings"),
+  east: z.array(projectedStandingSchema),
+  west: z.array(projectedStandingSchema),
+  disclaimer: z.string().min(1),
+});
+
+const finalsContenderSchema = z.object({
+  teamId: z.number(),
+  teamName: z.string(),
+  probability: z.number().nullable(),
+  topFactors: z.array(z.string()).optional().default([]),
+});
+
+export const finalsWinnerPredictionSchema = z.object({
+  season: z.literal("2026-27"),
+  predictionType: z.literal("finals_winner"),
+  predictedChampion: finalsContenderSchema.nullable(),
+  contenders: z.array(finalsContenderSchema),
+  disclaimer: z.string().min(1),
+});
+
 export const awardCandidateSchema = z.object({
   rank: z.number(),
   entity_id: z.number(),
@@ -415,6 +555,7 @@ export const awardPredictionSchema = z.object({
   candidates: z.array(awardCandidateSchema),
   warnings: z.array(z.string()),
   methodology: z.string(),
+  disclaimer: z.string().min(1),
 });
 
 export const projectedTeamSchema = z.object({
@@ -449,9 +590,11 @@ export const standingsPredictionSchema = z.object({
   teams: z.array(projectedTeamSchema),
   warnings: z.array(z.string()),
   methodology: z.string(),
+  disclaimer: z.string().min(1),
 });
 
 export const predictionLogSchema = z.object({
+  disclaimer: z.string().min(1),
   predictions: z.array(
     z.object({
       id: z.number(),
@@ -467,6 +610,12 @@ export const predictionLogSchema = z.object({
 
 export type BackendHealth = z.infer<typeof healthSchema>;
 export type AssistantChatResponse = z.infer<typeof assistantChatResponseSchema>;
+export type AssistantEvidence = z.infer<typeof assistantEvidenceSchema>;
+export type AssistantQueryResponse = z.infer<typeof assistantQueryResponseSchema>;
+export type PredictionAvailability = z.infer<typeof predictionAvailabilitySchema>;
+export type AllNbaPrediction = z.infer<typeof allNbaPredictionSchema>;
+export type SeasonStandingsPrediction = z.infer<typeof seasonStandingsPredictionSchema>;
+export type FinalsWinnerPrediction = z.infer<typeof finalsWinnerPredictionSchema>;
 export type AssistantSource = z.infer<typeof assistantSourceSchema>;
 export type AwardCandidate = z.infer<typeof awardCandidateSchema>;
 export type AwardPrediction = z.infer<typeof awardPredictionSchema>;
@@ -492,6 +641,7 @@ export type ReportSection = z.infer<typeof reportSectionSchema>;
 export type RestSplits = z.infer<typeof restSplitsSchema>;
 export type RollingTrendPoint = z.infer<typeof rollingTrendPointSchema>;
 export type SimilarPlayer = z.infer<typeof similarPlayerSchema>;
+export type SimilarFeatureComparison = z.infer<typeof similarFeatureComparisonSchema>;
 export type SimilarPlayersResponse = z.infer<typeof similarPlayersResponseSchema>;
 export type PlayerSplits = z.infer<typeof splitsResponseSchema>;
 export type PlayerTrends = z.infer<typeof trendsResponseSchema>;
@@ -502,3 +652,4 @@ export type TeamsResponse = z.infer<typeof teamsResponseSchema>;
 export type PredictionLog = z.infer<typeof predictionLogSchema>;
 export type ProjectedTeam = z.infer<typeof projectedTeamSchema>;
 export type StandingsPrediction = z.infer<typeof standingsPredictionSchema>;
+export type StandingsResponse = z.infer<typeof standingsResponseSchema>;

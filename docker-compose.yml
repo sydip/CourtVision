@@ -1,22 +1,22 @@
 services:
   db:
     image: postgres:16
-    container_name: hoopsiq-postgres
+    container_name: courtvision-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-hoopsiq}
-      POSTGRES_USER: ${POSTGRES_USER:-hoopsiq}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hoopsiq_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-courtvision}
+      POSTGRES_USER: ${POSTGRES_USER:-courtvision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courtvision_dev_password}
     ports:
       - "5432:5432"
     volumes:
-      - hoopsiq_postgres_data:/var/lib/postgresql/data
+      - courtvision_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hoopsiq} -d ${POSTGRES_DB:-hoopsiq}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-courtvision} -d ${POSTGRES_DB:-courtvision}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  hoopsiq_postgres_data:
+  courtvision_postgres_data:
 

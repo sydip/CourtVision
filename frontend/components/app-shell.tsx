@@ -4,8 +4,9 @@ import type React from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { PlayerNumberMark } from "@/components/player-number-mark";
-import { getPlayers, getTeams } from "@/lib/api/hoopsiq";
+import { getPlayers, getTeams } from "@/lib/api/courtvision";
 import type { PlayerListItem, Team } from "@/lib/api/schemas";
+import { useSeason } from "@/lib/state/season-context";
 
 type AppSection =
   | "Home"
@@ -14,16 +15,18 @@ type AppSection =
   | "Compare"
   | "Playoffs"
   | "Draft"
-  | "Offseason"
   | "Standings"
   | "Trend Analysis"
   | "Reports"
+  | "Methodology"
   | "Jordan";
 
 type AppShellProps = {
   active: AppSection;
   children: React.ReactNode;
   showTopSearch?: boolean;
+  /** Allows focused views to suppress section navigation when needed. */
+  showSectionNav?: boolean;
   themeStyle?: React.CSSProperties;
   variant?: "default" | "home" | "topbar";
 };
@@ -33,15 +36,14 @@ const primaryLinks = [
   { label: "Players", href: "/players" },
   { label: "Teams", href: "/rosters" },
   { label: "Standings", href: "/standings" },
-  { label: "Compare", href: "/compare" },
   { label: "Playoffs", href: "/playoffs" },
   { label: "Draft", href: "/draft" },
-  { label: "Offseason", href: "/offseason" },
-  { label: "Jordan", href: "/assistant" },
+  { label: "Compare", href: "/compare" },
+  { label: "Jordan", href: "/ai-assistant" },
 ] satisfies Array<{ label: AppSection; href: string }>;
 
 const secondaryLinks = [
-  { label: "Data Dictionary", href: "/" },
+  { label: "Methodology", href: "/methodology" },
   { label: "Glossary", href: "/" },
 ];
 
@@ -53,6 +55,7 @@ export function AppShell({
   active,
   children,
   showTopSearch = true,
+  showSectionNav = true,
   themeStyle,
   variant = "default",
 }: AppShellProps) {
@@ -60,6 +63,7 @@ export function AppShell({
   const isTopbarVariant = variant === "topbar";
   const hidesSidebar = isHomeVariant || isTopbarVariant;
   const sectionLinks = isHomeVariant ? homeTopLinks : defaultTopLinks;
+  const { season, seasons, setSeason, isSupported } = useSeason();
 
   return (
     <main
@@ -98,7 +102,11 @@ export function AppShell({
 
           <nav className="side-nav secondary" aria-label="Reference navigation">
             {secondaryLinks.map((item) => (
-              <a className="side-link" href={item.href} key={item.label}>
+              <a
+                className={item.label === active ? "side-link active" : "side-link"}
+                href={item.href}
+                key={item.label}
+              >
                 <span className="nav-glyph round" aria-hidden="true" />
                 <span>{item.label}</span>
               </a>
@@ -123,6 +131,7 @@ export function AppShell({
           className={[
             "topbar",
             showTopSearch ? "" : "no-search",
+            showSectionNav ? "" : "no-nav",
             isHomeVariant ? "home-topbar" : "",
             isTopbarVariant ? "profile-topbar" : "",
           ]
@@ -139,30 +148,47 @@ export function AppShell({
               Court<span className="brand-accent">Vision</span>
             </strong>
           </a>
-          <nav className="top-nav" aria-label="Section navigation">
-            {sectionLinks.map((item) => {
-              const isJordan = item.label === "Jordan";
-              return (
-                <a
-                  className={[
-                    item.label === active ? "top-link active" : "top-link",
-                    isJordan ? "top-link-jordan" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  href={item.href}
-                  key={item.label}
-                >
-                  {isJordan ? (
-                    <span className="jordan-spark" aria-hidden="true">
-                      ✦
-                    </span>
-                  ) : null}
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
+          {showSectionNav ? (
+            <nav className="top-nav" aria-label="Section navigation">
+              {sectionLinks.map((item) => {
+                const isJordan = item.label === "Jordan";
+                return (
+                  <a
+                    className={[
+                      item.label === active ? "top-link active" : "top-link",
+                      isJordan ? "top-link-jordan" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    href={item.href}
+                    key={item.label}
+                  >
+                    {isJordan ? (
+                      <span className="jordan-spark" aria-hidden="true">
+                        ✦
+                      </span>
+                    ) : null}
+                    {item.label}
+                  </a>
+                );
+              })}
+            </nav>
+          ) : null}
+          <label className="global-season-select">
+            <span className="sr-only">Season</span>
+            <select
+              aria-label="Season"
+              onChange={(event) => setSeason(event.target.value)}
+              value={isSupported ? season : ""}
+            >
+              {!isSupported ? <option value="">Unsupported: {season}</option> : null}
+              {seasons.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
           {showTopSearch ? <TopPlayerSearch /> : null}
         </header>
 
@@ -175,6 +201,7 @@ export function AppShell({
 const topSearchTeamLimit = 4;
 
 function TopPlayerSearch() {
+  const { season } = useSeason();
   const [search, setSearch] = useState("");
   const [players, setPlayers] = useState<PlayerListItem[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -187,7 +214,7 @@ function TopPlayerSearch() {
 
   useEffect(() => {
     let isActive = true;
-    getTeams()
+    getTeams(season)
       .then((response) => {
         if (isActive) {
           setTeams(response.teams);
@@ -200,7 +227,7 @@ function TopPlayerSearch() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [season]);
 
   useEffect(() => {
     if (!normalizedSearch) {
@@ -214,7 +241,7 @@ function TopPlayerSearch() {
     setIsLoading(true);
     setHasError(false);
 
-    getPlayers({ q: normalizedSearch, limit: topSearchLimit })
+    getPlayers({ q: normalizedSearch, limit: topSearchLimit, season })
       .then((response) => {
         if (isActive) {
           setPlayers(response.items);
@@ -235,7 +262,7 @@ function TopPlayerSearch() {
     return () => {
       isActive = false;
     };
-  }, [normalizedSearch]);
+  }, [normalizedSearch, season]);
 
   const filteredTeams = useMemo(() => {
     if (!normalizedSearch) {
